@@ -215,6 +215,7 @@ export default class StandardApp extends React.Component {
         );
     }
     setupTouchEvents = (el) => {
+        if (!el) return;
         el.addEventListener('touchstart', ev => {
             this.touchY = ev.targetTouches[0].clientY;
         }, { passive: false });
