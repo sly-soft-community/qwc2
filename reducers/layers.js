@@ -11,7 +11,7 @@ import isEmpty from 'lodash.isempty';
 import {UrlParams} from '../utils/PermaLinkUtils';
 import LayerUtils from '../utils/LayerUtils';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
-import {v1 as uuidv4} from 'uuid';
+import {v4 as uuidv4} from 'uuid';
 import {
     LayerRole,
     SET_LAYER_LOADING,
@@ -280,7 +280,7 @@ export default function layers(state = defaultState, action) {
         if (action.layer) {
             newLayers = newLayers.map(layer => {
                 if (layer.type === 'placeholder' && layer.id === action.id) {
-                    const newLayer = {...action.layer};
+                    const newLayer = {...action.layer, ...layer, type: action.layer.type};
                     LayerUtils.addUUIDs(newLayer);
                     if (newLayer.type === "wms") {
                         Object.assign(newLayer, LayerUtils.buildWMSLayerParams(newLayer));

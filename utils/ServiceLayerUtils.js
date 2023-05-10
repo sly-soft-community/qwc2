@@ -197,7 +197,6 @@ const ServiceLayerUtils = {
             bbox: bbox,
             visibility: true,
             opacity: 255,
-            external: true,
             extwmsparams: extwmsparams,
             minScale: layer.MinScaleDenominator,
             maxScale: layer.MaxScaleDenominator
@@ -368,8 +367,7 @@ const ServiceLayerUtils = {
                         id: layerConfig.id,
                         opacity: layerConfig.opacity,
                         visibility: layerConfig.visibility,
-                        role: LayerRole.USERLAYER,
-                        sublayers: null
+                        role: LayerRole.USERLAYER
                     };
                     callback(layerConfig.id, layer);
                 } else {
