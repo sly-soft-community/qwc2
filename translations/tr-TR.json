@@ -6,6 +6,7 @@
       "menulabel": "Harita & Araçlar",
       "items": {
         "AttributeTable": "",
+        "Cyclomedia": "",
         "DxfExport": "DXF'e Veri Aktar",
         "Editing": "Düzenleme",
         "FeatureForm": "",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Kopyalamak için tıkla",
       "copied": "Kopyalandı"
+    },
+    "cyclomedia": {
+      "clickonmap": "",
+      "loaderror": "",
+      "loading": "",
+      "login": "",
+      "scalehint": "",
+      "title": ""
     },
     "dxfexport": {
       "layers": "",

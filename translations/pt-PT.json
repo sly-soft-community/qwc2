@@ -6,6 +6,7 @@
       "menulabel": "Mapas & Ferramentas",
       "items": {
         "AttributeTable": "",
+        "Cyclomedia": "",
         "DxfExport": "Exportar DXF",
         "Editing": "Editando",
         "FeatureForm": "",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Clique para copiar",
       "copied": "Copiado"
+    },
+    "cyclomedia": {
+      "clickonmap": "",
+      "loaderror": "",
+      "loading": "",
+      "login": "",
+      "scalehint": "",
+      "title": ""
     },
     "dxfexport": {
       "layers": "",

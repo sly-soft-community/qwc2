@@ -6,6 +6,7 @@
       "menulabel": "Eszközök",
       "items": {
         "AttributeTable": "",
+        "Cyclomedia": "",
         "DxfExport": "DXF Exportálás",
         "Editing": "Szerkesztés",
         "FeatureForm": "",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Kattints a másoláshoz",
       "copied": "Kimásolva"
+    },
+    "cyclomedia": {
+      "clickonmap": "",
+      "loaderror": "",
+      "loading": "",
+      "login": "",
+      "scalehint": "",
+      "title": ""
     },
     "dxfexport": {
       "layers": "",

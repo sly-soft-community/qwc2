@@ -6,6 +6,7 @@
       "menulabel": "Kart & Verktøy",
       "items": {
         "AttributeTable": "",
+        "Cyclomedia": "",
         "DxfExport": "Eksporter DXF",
         "Editing": "Rediger",
         "FeatureForm": "",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Klikk for å kopiere",
       "copied": "Kopiert"
+    },
+    "cyclomedia": {
+      "clickonmap": "",
+      "loaderror": "",
+      "loading": "",
+      "login": "",
+      "scalehint": "",
+      "title": ""
     },
     "dxfexport": {
       "layers": "",

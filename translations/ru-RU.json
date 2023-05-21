@@ -6,6 +6,7 @@
       "menulabel": "Карта и инструменты",
       "items": {
         "AttributeTable": "",
+        "Cyclomedia": "",
         "DxfExport": "Экспорт в DXF",
         "Editing": "Правка",
         "FeatureForm": "",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Копировать",
       "copied": "Скопировано"
+    },
+    "cyclomedia": {
+      "clickonmap": "",
+      "loaderror": "",
+      "loading": "",
+      "login": "",
+      "scalehint": "",
+      "title": ""
     },
     "dxfexport": {
       "layers": "",

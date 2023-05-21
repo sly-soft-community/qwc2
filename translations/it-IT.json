@@ -6,6 +6,7 @@
       "menulabel": "Mappa e strumenti",
       "items": {
         "AttributeTable": "Tabella attributi",
+        "Cyclomedia": "Cyclomedia",
         "DxfExport": "Esporta su DXF",
         "Editing": "Strumenti di modifica",
         "FeatureForm": "Formulario oggetto",
@@ -79,6 +80,14 @@
     "copybtn": {
       "click_to_copy": "Clicca per copiare",
       "copied": "Copiato"
+    },
+    "cyclomedia": {
+      "clickonmap": "Seleziona un punto di registrazione sulla mappa",
+      "loaderror": "Errore durante l'inizializzazione di Cyclomedia",
+      "loading": "Inizializzazione di Cyclomedia...",
+      "login": "Login",
+      "scalehint": "Le registrazioni sono solo visibili sulla mappa a partire da una scala di 1:{0}.",
+      "title": "Visualizzatore Cyclomedia"
     },
     "dxfexport": {
       "layers": "Livelli",
