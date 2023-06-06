@@ -205,7 +205,7 @@ export default class StandardApp extends React.Component {
         const plugins = this.props.appConfig.pluginsDef.plugins;
         return (
             <Provider store={this.store}>
-                <div ref={this.setupTouchEvents}>
+                <div id="standard-app" ref={this.setupTouchEvents}>
                     <AppInit appConfig={this.props.appConfig} initialParams={this.initialParams}/>
                     <Localized>
                         <PluginsContainer plugins={plugins} pluginsAppConfig={this.props.appConfig.pluginsDef.cfg || {}} />

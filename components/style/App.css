@@ -1,230 +1,263 @@
-* {
-    cursor: inherit;
-    box-sizing: border-box;
+#standard-app :after,
+#standard-app :before {
+  box-sizing: border-box;
 }
 
-:after, :before {
-    box-sizing: border-box;
+#standard-app #container {
+  cursor: inherit;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: default;
+  color: var(--text-color);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
 }
 
-html, body {
-    overflow: hidden;
-    cursor: default;
-    color: var(--text-color);
-    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
-    font-size: 14px;
-    margin: 0;
-    padding: 0;
+#standard-app a {
+  cursor: pointer;
+  color: var(--text-color-link);
+  text-decoration: none;
 }
 
-html, body, #container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+#standard-app a:hover {
+  text-decoration: underline;
 }
 
-a {
-    cursor: pointer;
-    color: var(--text-color-link);
-    text-decoration: none;
+#standard-app h1,
+#standard-app h2,
+#standard-app h3,
+#standard-app h4 {
+  font-weight: 500;
+  margin: 0.5em 0;
 }
 
-a:hover {
-    text-decoration: underline;
+#standard-app h1 {
+  font-size: 160%;
+}
+#standard-app h2 {
+  font-size: 150%;
+}
+#standard-app h3 {
+  font-size: 140%;
+}
+#standard-app h4 {
+  font-size: 130%;
+}
+#standard-app h5 {
+  font-size: 120%;
+}
+#standard-app h6 {
+  font-size: 110%;
 }
 
-h1, h2, h3, h4 {
-    font-weight: 500;
-    margin: 0.5em 0;
+#standard-app table {
+  border-collapse: collapse;
 }
 
-h1 { font-size: 160%; }
-h2 { font-size: 150%; }
-h3 { font-size: 140%; }
-h4 { font-size: 130%; }
-h5 { font-size: 120%; }
-h6 { font-size: 110%; }
-
-table {
-    border-collapse: collapse;
+#standard-app ul {
+  margin: 0;
 }
 
-ul {
-    margin: 0;
+#standard-app input,
+select,
+button,
+textarea {
+  border-radius: 0;
+  color: inherit;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
 }
 
-input, select, button, textarea {
-    border-radius: 0;
-    color: inherit;
-    font-family: inherit;
-    font-size: inherit;
-    margin: 0;
+#standard-app input:focus,
+#standard-app select:focus,
+#standard-app button:focus,
+#standard-app textarea:focus {
+  outline: var(--focus-outline);
 }
 
-input:focus, select:focus, button:focus, textarea:focus {
-    outline: var(--focus-outline);
+#standard-app textarea,
+#standard-app
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+#standard-app select {
+  padding: 0.25em;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg-color);
+  color: var(--text-color);
 }
 
-textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]), select {
-    padding: 0.25em;
-    border: 1px solid var(--border-color);
-    background-color: var(--input-bg-color);
-    color: var(--text-color);
+#standard-app
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not(
+    [type="file"]
+  ),
+#standard-app select {
+  height: 2em;
 }
 
-input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select {
-    height: 2em;
+#standard-app textarea,
+#standard-app
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) {
+  cursor: text;
 }
 
-textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]) {
-    cursor: text;
+#standard-app input:read-only,
+#standard-app textarea:read-only,
+#standard-app
+  input:not([type="checkbox"]):not([type="radio"]):not(
+    [type="range"]
+  ):read-only {
+  color: var(--text-color-disabled);
 }
 
-input:read-only, textarea:read-only, input:not([type=checkbox]):not([type=radio]):not([type=range]):read-only {
-    color: var(--text-color-disabled);
+#standard-app input:disabled,
+#standard-app select:disabled,
+#standard-app textarea:disabled {
+  background-color: var(--input-bg-color-disabled);
+  color: var(--text-color-disabled);
 }
 
-input:disabled, select:disabled, textarea:disabled {
-    background-color: var(--input-bg-color-disabled);
-    color: var(--text-color-disabled);
-}
-
-input:invalid, select:invalid, textarea:invalid, input:not([type=checkbox]):not([type=radio]):not([type=range]):invalid {
-    background-color: #FFAAAA;
+#standard-app input:invalid,
+#standard-app select:invalid,
+#standard-app textarea:invalid,
+#standard-app
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):invalid {
+  background-color: #ffaaaa;
 }
 
 /** Button **/
-button.button {
-    background-color: var(--button-bg-color);
-    color: var(--button-text-color);
-    border: 1px solid var(--border-color);
-    display: inline-flex;
-    padding: 0.5em;
-    align-items: center;
-    justify-content: center;
-    height: 2em;
-    overflow: hidden;
-    cursor: pointer;
-    outline: none;
+#standard-app button.button {
+  background-color: var(--button-bg-color);
+  color: var(--button-text-color);
+  border: 1px solid var(--border-color);
+  display: inline-flex;
+  padding: 0.5em;
+  align-items: center;
+  justify-content: center;
+  height: 2em;
+  overflow: hidden;
+  cursor: pointer;
+  outline: none;
 }
 
-button.button:disabled {
-    background-color: var(--button-bg-color-disabled);
-    color: var(--button-text-color-disabled);
-    cursor: default;
+#standard-app button.button:disabled {
+  background-color: var(--button-bg-color-disabled);
+  color: var(--button-text-color-disabled);
+  cursor: default;
 }
 
-button.button:not(:disabled):hover {
-    background-color: var(--button-bg-color-hover);
-    color: var(--button-text-color-hover);
+#standard-app button.button:not(:disabled):hover {
+  background-color: var(--button-bg-color-hover);
+  color: var(--button-text-color-hover);
 }
 
-button.button.pressed:not(:disabled):hover {
-    background-color: var(--button-bg-color-active-hover);
-    color: var(--button-text-color-active-hover);
+#standard-app button.button.pressed:not(:disabled):hover {
+  background-color: var(--button-bg-color-active-hover);
+  color: var(--button-text-color-active-hover);
 }
 
-button.button.pressed:not(:disabled) {
-    background-color: var(--button-bg-color-active);
-    color: var(--button-text-color-active);
+#standard-app button.button.pressed:not(:disabled) {
+  background-color: var(--button-bg-color-active);
+  color: var(--button-text-color-active);
 }
 
-button.button-accept {
-    background-color: rgb(127,255,127);
+#standard-app button.button-accept {
+  background-color: rgb(127, 255, 127);
 }
 
-button.button-warning {
-    background-color: #ffd979;
+#standard-app button.button-warning {
+  background-color: #ffd979;
 }
 
-button.button-reject {
-    background-color: rgb(255,127,127);
+#standard-app button.button-reject {
+  background-color: rgb(255, 127, 127);
 }
 
-button.button-accept:not(:disabled):hover {
-    background-color: rgb(127,225,127);
+#standard-app button.button-accept:not(:disabled):hover {
+  background-color: rgb(127, 225, 127);
 }
 
-button.button-reject:not(:disabled):hover {
-    background-color: rgb(225,127,127);
+#standard-app button.button-reject:not(:disabled):hover {
+  background-color: rgb(225, 127, 127);
 }
 
-button.button > * {
-    flex: 0 0 auto;
+#standard-app button.button > * {
+  flex: 0 0 auto;
 }
 
-button.button:not(:disabled):active > * {
-    position: relative!important;
-    left: 1px;
-    top: 1px;
+#standard-app button.button:not(:disabled):active > * {
+  position: relative !important;
+  left: 1px;
+  top: 1px;
 }
 
-button.button > span:not(.icon) {
-    margin: 0 0.5em;
+#standard-app button.button > span:not(.icon) {
+  margin: 0 0.5em;
 }
 
-button.button > div.spinner {
-    width: 1.5em;
-    height: 1.5em;
+#standard-app button.button > div.spinner {
+  width: 1.5em;
+  height: 1.5em;
 }
 
 /** Range slider **/
-input[type=range] {
-    -webkit-appearance: none;
-    appearance: none;
-    background-color: transparent;
-    height: 2em;
+#standard-app input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  height: 2em;
 }
 
-input[type=range]::-moz-range-track {
-    background: #ddd;
-    height: 4px;
+#standard-app input[type="range"]::-moz-range-track {
+  background: #ddd;
+  height: 4px;
 }
 
-input[type=range]::-webkit-slider-runnable-track {
-    background: #ddd;
-    height: 4px;
+#standard-app input[type="range"]::-webkit-slider-runnable-track {
+  background: #ddd;
+  height: 4px;
 }
 
-input[type=range]::-moz-range-thumb {
-    appearance: none;
-    -webkit-appearance: none;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    height: 12px;
-    width: 12px;
-    box-sizing: border-box;
-    background: var(--input-bg-color);
-    margin-top: -3.5px;
+#standard-app input[type="range"]::-moz-range-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+  box-sizing: border-box;
+  background: var(--input-bg-color);
+  margin-top: -3.5px;
 }
 
-input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    border: 1px solid var(--border-color);
-    border-radius: 50%;
-    height: 12px;
-    width: 12px;
-    box-sizing: border-box;
-    background: var(--input-bg-color);
-    margin-top: -3.5px;
+#standard-app input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  height: 12px;
+  width: 12px;
+  box-sizing: border-box;
+  background: var(--input-bg-color);
+  margin-top: -3.5px;
 }
 
 /* react-numeric-input */
-span.react-numeric-input > input {
-    border-radius: 0!important;
-    height: 2em;
-    width: 100%;
-    border: 1px solid var(--border-color)!important;
+#standard-app span.react-numeric-input > input {
+  border-radius: 0 !important;
+  height: 2em;
+  width: 100%;
+  border: 1px solid var(--border-color) !important;
 }
 
-span.react-numeric-input > b {
-    border: 1px solid var(--border-color)!important;
-    background-color: var(--button-bg-color)!important;
-    color: var(--button-text-color)!important;
+#standard-app span.react-numeric-input > b {
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--button-bg-color) !important;
+  color: var(--button-text-color) !important;
 }
 
-span.react-numeric-input > b:hover {
-    background-color: var(--button-bg-color-hover)!important;
+#standard-app span.react-numeric-input > b:hover {
+  background-color: var(--button-bg-color-hover) !important;
 }
