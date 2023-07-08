@@ -38,12 +38,14 @@ import VectorLayerUtils from '../utils/VectorLayerUtils';
 /**
  * Compute routes and isochrones.
  *
- * Uses Valhalla as backend by default, with `routingServiceUrl` pointing to a Valhalla server.
+ * Requites `routingServiceUrl` in `config.json` pointing to a Valhalla routing service.
  */
 class Routing extends React.Component {
     static propTypes = {
         addLayerFeatures: PropTypes.func,
         displaycrs: PropTypes.string,
+        /** List of enabled routing modes. */
+        enabledModes: PropTypes.arrayOf(PropTypes.string),
         /** List of search providers to use for routing location search. */
         enabledProviders: PropTypes.arrayOf(PropTypes.string),
         /** Default window geometry. */
@@ -65,6 +67,7 @@ class Routing extends React.Component {
         zoomToExtent: PropTypes.func
     };
     static defaultProps = {
+        enabledModes: ["auto", "heavyvehicle", "transit", "bicycle", "pedestrian"],
         enabledProviders: ["coordinates", "nominatim"],
         geometry: {
             initialWidth: 320,
@@ -140,6 +143,7 @@ class Routing extends React.Component {
             displaycrs: this.props.displaycrs,
             lang: LocaleUtils.lang()
         };
+        this.state.mode = this.props.enabledModes[0];
     }
     componentDidUpdate(prevProps, prevState) {
         // Activated / message
@@ -227,13 +231,14 @@ class Routing extends React.Component {
             {key: "bicycle", icon: "routing-bicycle", tooltip: LocaleUtils.trmsg("routing.mode_bicycle")},
             {key: "pedestrian", icon: "routing-walking", tooltip: LocaleUtils.trmsg("routing.mode_walking")}
         ];
+        const enabledButtons = this.props.enabledModes.map(entry => buttons.find(button => button.key === entry));
         return (
             <ResizeableWindow icon="routing" onClose={() => this.setState({visible: false})} title={LocaleUtils.tr("routing.windowtitle")} {...this.props.geometry}>
                 <div className="routing-body" role="body">
                     <ButtonBar active={this.state.currentTab} buttons={tabButtons} className="routing-buttonbar" onClick={(key) => this.setState({currentTab: key})} />
                     <div className="routing-frame">
                         <div className="routing-buttons">
-                            <ButtonBar active={this.state.mode} buttons={buttons} onClick={key => this.setState({mode: key})} />
+                            <ButtonBar active={this.state.mode} buttons={enabledButtons} onClick={key => this.setState({mode: key})} />
                             <button className={"button" + (this.state.settingsPopup ? " pressed" : "")} onClick={() => this.setState((state) => ({settingsPopup: !state.settingsPopup}))}>
                                 <Icon icon="cog" />
                             </button>

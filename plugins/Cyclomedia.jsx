@@ -37,6 +37,8 @@ class Cyclomedia extends React.Component {
         clientId: PropTypes.string,
         /** The cyclomedia version. */
         cyclomediaVersion: PropTypes.string,
+        /** Whether to display Cyclomedia measurement geometries on the map. */
+        displayMeasurements: PropTypes.bool,
         /** Default window geometry. */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
@@ -61,6 +63,7 @@ class Cyclomedia extends React.Component {
     };
     static defaultProps = {
         cyclomediaVersion: '23.6',
+        displayMeasurements: true,
         geometry: {
             initialWidth: 480,
             initialHeight: 640,
@@ -75,7 +78,8 @@ class Cyclomedia extends React.Component {
         status: Status.LOGIN,
         message: "",
         username: "",
-        password: ""
+        password: "",
+        loginFailed: false
     };
     constructor(props) {
         super(props);
@@ -84,7 +88,7 @@ class Cyclomedia extends React.Component {
     }
     componentDidUpdate(prevProps, prevState) {
         if (!prevProps.active && this.props.active) {
-            this.setState({status: this.props.clientId ? Status.LOADING : Status.LOGIN});
+            this.setState({status: this.props.clientId ? Status.LOADING : Status.LOGIN, loginFailed: false});
         } else if (
             (prevProps.active && !this.props.active) ||
             (prevProps.theme && !this.props.theme)
@@ -112,11 +116,12 @@ class Cyclomedia extends React.Component {
         if (this.state.status === Status.LOGIN && prevState.status > Status.LOGIN) {
             this.props.removeLayer('cyclomedia-recordings');
             this.props.removeLayer('cyclomedia-cone');
+            this.props.removeLayer('cyclomedia-measurements');
         }
     }
     onClose = () => {
         this.props.setCurrentTask(null);
-        this.setState({status: Status.LOGIN});
+        this.setState({status: Status.LOGIN, loginFailed: false});
     };
     render() {
         if (!this.props.active) {
@@ -212,7 +217,7 @@ class Cyclomedia extends React.Component {
         } else if (!iframe.getAttribute("callback-registered")) {
             if (iframe.contentWindow.registerCallbacks) {
                 iframe.setAttribute("callback-registered", true);
-                iframe.contentWindow.registerCallbacks(this.apiInitialized, this.panoramaPositionChanged);
+                iframe.contentWindow.registerCallbacks(this.apiInitialized, this.panoramaPositionChanged, this.measurementChanged);
             }
         } else if (!iframe.getAttribute("init-called")) {
             if (iframe.contentWindow.StreetSmartApi) {
@@ -222,9 +227,9 @@ class Cyclomedia extends React.Component {
         } else {
             clearInterval(this.iframePollIntervall);
         }
-    }
+    };
     apiInitialized = (success, message = "") => {
-        this.setState({status: success ? Status.LOADED : Status.LOGIN, message: message});
+        this.setState({status: success ? Status.LOADED : Status.LOGIN, message: message, loginFailed: !success});
     };
     panoramaPositionChanged = (posData) => {
         const scale = 50;
@@ -269,6 +274,26 @@ class Cyclomedia extends React.Component {
         };
         this.props.addLayerFeatures(layer, [feature], true);
     };
+    measurementChanged = (measurement) => {
+        if (this.props.displayMeasurements) {
+            if (measurement) {
+                const layer = {
+                    id: "cyclomedia-measurements",
+                    role: LayerRole.MARKER,
+                    crs: measurement.crs.properties.name,
+                    styleOptions: {
+                        strokeColor: 'red',
+                        strokeWidth: 4,
+                        fillColor: [255, 0, 0, 0.25],
+                        strokeDash: []
+                    }
+                };
+                this.props.addLayerFeatures(layer, measurement.features, true);
+            } else {
+                this.props.removeLayer("cyclomedia-measurements");
+            }
+        }
+    }
     cyclomediaIndexHtml = () => {
         const supportedLang = ["de", "en-GB", "en-US", "fi", "fr", "nl", "tr", "pl"];
         let lang = LocaleUtils.lang();
@@ -278,6 +303,7 @@ class Cyclomedia extends React.Component {
                 lang = "en-US";
             }
         }
+        const loginOauth = !!this.props.clientId && !this.state.loginFailed;
         return `
             <html>
             <head>
@@ -288,6 +314,7 @@ class Cyclomedia extends React.Component {
             let apiInitialized = false;
             let initCallback = null;
             let posCallback = null;
+            let measureCallback = null;
 
             function initApi() {
                 StreetSmartApi.init({
@@ -296,6 +323,7 @@ class Cyclomedia extends React.Component {
                     password: "${this.state.password || undefined}",
                     apiKey: "${this.props.apikey}",
                     clientId: "${this.props.clientId}",
+                    loginOauth: ${loginOauth},
                     loginRedirectUri: "${this.props.loginRedirectUri}",
                     logoutRedirectUri: "${this.props.logoutRedirectUri}",
                     srs: "${this.props.projection}",
@@ -338,14 +366,16 @@ class Cyclomedia extends React.Component {
                 }).then((result) => {
                     if (result && result[0]){
                         window.panoramaViewer = result[0];
-                        window.panoramaViewer.on(StreetSmartApi.Events.panoramaViewer.IMAGE_CHANGE, changeview);
-                        window.panoramaViewer.on(StreetSmartApi.Events.panoramaViewer.VIEW_CHANGE, changeview);
+                        window.panoramaViewer.on(StreetSmartApi.Events.panoramaViewer.IMAGE_CHANGE, changeView);
+                        window.panoramaViewer.on(StreetSmartApi.Events.panoramaViewer.VIEW_CHANGE, changeView);
+                        StreetSmartApi.on(StreetSmartApi.Events.measurement.MEASUREMENT_CHANGED, changeMeasurement);
+                        StreetSmartApi.on(StreetSmartApi.Events.measurement.MEASUREMENT_STOPPED, stopMeasurement);
                     }          
                 }).catch((reason) => {
                     console.log('Failed to create component(s) through API: ' + reason);
                 });
             }
-            function changeview() {
+            function changeView() {
                 if (posCallback) {
                     const recording = window.panoramaViewer.getRecording();
                     const orientation = window.panoramaViewer.getOrientation();
@@ -359,9 +389,16 @@ class Cyclomedia extends React.Component {
                     posCallback(posData);
                 }
             }
-            function registerCallbacks(_initCallback, _posCallback) {
+            function changeMeasurement(e) {
+                measureCallback(e.detail.activeMeasurement);
+            }
+            function stopMeasurement() {
+                measureCallback(null);
+            }
+            function registerCallbacks(_initCallback, _posCallback, _measureCallback) {
                 initCallback = _initCallback;
                 posCallback = _posCallback;
+                measureCallback = _measureCallback;
             }
             </script>
             </head>

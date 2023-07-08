@@ -34,9 +34,8 @@ import './style/Editing.css';
  *
  * The attribute form is generated from the QGIS attribute form configuration.
  *
- * By default, requires `editServiceUrl` to point to a qwc-data-service. See
- * [https://github.com/qwc-services/qwc-data-service](https://github.com/qwc-services/qwc-data-service)
- * for more information.
+ * This plugin queries the dataset via the editing service specified by
+ * `editServiceUrl` in `config.json` (by default the `qwc-data-service`).
  */
 class Editing extends React.Component {
     static propTypes = {
@@ -177,7 +176,7 @@ class Editing extends React.Component {
                 <div className="editing-feature-selection">
                     <select className="combo editing-feature-select" disabled={this.props.editContext.changed === true || this.props.editContext.id !== this.props.currentEditContext} onChange={(ev) => this.setEditFeature(ev.target.value)}  value={(this.props.editContext.feature || {}).id || ""}>
                         {this.state.pickedFeatures.map(feature => (
-                            <option key={feature.id} value={feature.id}>{editConfig.displayField ? feature.properties[editConfig.displayField] : featureText + " " + feature.id}</option>
+                            <option key={feature.id} value={feature.id}>{curConfig.displayField ? feature.properties[curConfig.displayField] : featureText + " " + feature.id}</option>
                         ))}
                     </select>
                 </div>
