@@ -149,8 +149,8 @@ const LayerUtils = {
         if (!Array.isArray(layer.sublayers)) {
             newParams = {
                 LAYERS: params.LAYERS || layer.name,
-                OPACITIES: params.OPACITIES || ("" + (layer.opacity !== undefined ? layer.opacity : 255)),
-                STYLES: params.STYLES || "",
+                OPACITIES: "" + (layer.opacity ?? params.OPACITIES ?? 255),
+                STYLES: params.STYLES ?? "",
                 ...layer.dimensionValues
             };
             queryLayers = layer.queryable ? [layer.name] : [];
@@ -678,12 +678,13 @@ const LayerUtils = {
             delete urlParts.search;
             return url.format(urlParts);
         } else {
+            const layername = layer === sublayer ? layer.name.replace(/.*\//, '') : sublayer.name;
             const urlParts = url.parse(layer.legendUrl, true);
             urlParts.query = {
                 VERSION: layer.version,
                 ...urlParts.query,
                 ...requestParams,
-                LAYER: sublayer.name
+                LAYER: layername
             };
             delete urlParts.search;
             return url.format(urlParts);
@@ -759,7 +760,7 @@ const LayerUtils = {
                 params.LAYERS.push(layer.params.LAYERS);
                 params.OPACITIES.push(layer.params.OPACITIES);
                 params.COLORS.push(layer.params.LAYERS.split(",").map(() => "").join(","));
-            } else if (printExternalLayers && layer.role === LayerRole.USERLAYER) {
+            } else if (printExternalLayers && layer.role === LayerRole.USERLAYER && layer.visibility !== false && LayerUtils.layerScaleInRange(layer, printScale)) {
                 LayerUtils.addExternalLayerPrintParams(layer, params, printCrs, counterRef);
             }
         }

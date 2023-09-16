@@ -75,7 +75,7 @@ for child in contents.childNodes:
         tileMatrixSet = child
         tileMatrixName = getFirstElementValueByTagName(tileMatrixSet, "ows:Identifier")
         supportedCrs = getFirstElementValueByTagName(tileMatrixSet, "ows:SupportedCRS")
-        crsMatch = re.search('(EPSG).*:(\d+)', supportedCrs)
+        crsMatch = re.search(r'(EPSG).*:(\d+)', supportedCrs)
         if crsMatch and crs == "EPSG:" + crsMatch.group(2) and tileMatrixName in layerTileMatrixSet:
             tileMatrix = tileMatrixSet.getElementsByTagName("TileMatrix")
             break
@@ -83,6 +83,15 @@ for child in contents.childNodes:
 if not tileMatrix:
     print("Could not find compatible tile matrix", file=sys.stderr)
     sys.exit(1)
+
+# Boundingbox
+bboxEl = getFirstElementByTagName(layer, "ows:WGS84BoundingBox")
+bboxLower = list(map(float, getFirstElementValueByTagName(bboxEl, "ows:LowerCorner").split(" ")))
+bboxUpper = list(map(float, getFirstElementValueByTagName(bboxEl, "ows:UpperCorner").split(" ")))
+bbox = {
+    "crs": "EPSG:4326",
+    "bounds": [bboxLower[0], bboxLower[1], bboxUpper[0], bboxUpper[1]]
+}
 
 # Compute origin and resolutions
 origin = list(map(float, filter(bool, getFirstElementValueByTagName(tileMatrix[0], "TopLeftCorner").split(" "))))
@@ -154,7 +163,7 @@ result = {
         "bounds": bounds
     },
     "resolutions": resolutions,
-    "thumbnail": "img/mapthumbs/" + layerName + ".jpg",
+    "thumbnail": layerName + ".jpg",
 }
 
 print(json.dumps(result, indent=2))

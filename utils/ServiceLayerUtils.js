@@ -206,7 +206,7 @@ const ServiceLayerUtils = {
         try {
             const urlParts = url.parse(capabilityUrl, true);
             urlParts.host = calledServiceUrlParts.host;
-            urlParts.protocol = calledServiceUrlParts.protocol;
+            urlParts.protocol = calledServiceUrlParts.protocol ?? location.protocol;
             urlParts.query = {...calledServiceUrlParts.query, ...urlParts.query};
             delete urlParts.search;
             return url.format(urlParts);
@@ -361,6 +361,8 @@ const ServiceLayerUtils = {
                     result = ServiceLayerUtils.getWMTSLayers(response.data, serviceUrl, mapCrs);
                 }
                 let layer = LayerUtils.searchSubLayer({sublayers: result}, "name", layerConfig.name);
+                // Some services (i.e. wms.geo.admin.ch) have same-named sublayers
+                layer = LayerUtils.searchSubLayer(layer, "name", layerConfig.name) ?? layer;
                 if (layer) {
                     layer = {
                         ...layer,

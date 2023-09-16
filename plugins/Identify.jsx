@@ -57,17 +57,19 @@ class Identify extends React.Component {
         enableExport: PropTypes.bool,
         /** Whether to assume that XML GetFeatureInfo responses specify the technical layer name in the `name` attribute, rather than the layer title. */
         featureInfoReturnsLayerName: PropTypes.bool,
+        /** Default window geometry with size, position and docking status. */
+        geometry: PropTypes.shape({
+            initialWidth: PropTypes.number,
+            initialHeight: PropTypes.number,
+            initialX: PropTypes.number,
+            initialY: PropTypes.number,
+            initiallyDocked: PropTypes.bool
+        }),
         iframeDialogsInitiallyDocked: PropTypes.bool,
-        /** The initial height of the identify dialog. */
-        initialHeight: PropTypes.number,
-        /** The initial width of the identify dialog. */
-        initialWidth: PropTypes.number,
-        /** The initial x coordinate of the identify dialog. */
-        initialX: PropTypes.number,
-        /** The initial y coordinate of the identify dialog. */
-        initialY: PropTypes.number,
-        /** Whether the identify dialog should be initially docked. */
-        initiallyDocked: PropTypes.bool,
+        /** The initial radius of the identify dialog in radius mode. */
+        initialRadius: PropTypes.number,
+        /** The initial radius units of the identify dialog in radius mode. One of 'meters', 'feet', 'kilometers', 'miles'. */
+        initialRadiusUnits: PropTypes.string,
         layers: PropTypes.array,
         longAttributesDisplay: PropTypes.string,
         map: PropTypes.object,
@@ -85,18 +87,23 @@ class Identify extends React.Component {
         longAttributesDisplay: 'ellipsis',
         displayResultTree: true,
         replaceImageUrls: true,
-        initialWidth: 240,
-        initialHeight: 320,
-        initialX: 0,
-        initialY: 0,
-        featureInfoReturnsLayerName: true
+        featureInfoReturnsLayerName: true,
+        geometry: {
+            initialWidth: 240,
+            initialHeight: 320,
+            initialX: 0,
+            initialY: 0,
+            initiallyDocked: false
+        },
+        initialRadius: 50,
+        initialRadiusUnits: 'meters'
     };
     state = {
         mode: 'Point',
         identifyResults: null,
         pendingRequests: 0,
-        radius: 50,
-        radiusUnits: 'meters'
+        radius: this.props.initialRadius,
+        radiusUnits: this.props.initialRadiusUnits
     };
     componentDidUpdate(prevProps) {
         if (this.props.currentIdentifyTool !== prevProps.currentIdentifyTool && prevProps.currentIdentifyTool === "Identify") {
@@ -375,8 +382,8 @@ class Identify extends React.Component {
             }
             resultWindow = (
                 <ResizeableWindow icon="info-sign"
-                    initialHeight={this.props.initialHeight} initialWidth={this.props.initialWidth}
-                    initialX={this.props.initialX} initialY={this.props.initialY} initiallyDocked={this.props.initiallyDocked}
+                    initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+                    initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY} initiallyDocked={this.props.geometry.initiallyDocked}
                     key="IdentifyWindow"
                     onClose={this.clearResults} title={LocaleUtils.trmsg("identify.title")}
                 >

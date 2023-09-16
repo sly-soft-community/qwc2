@@ -165,7 +165,7 @@ class ResizeableWindow extends React.Component {
         }
         let icon = null;
         if (this.props.icon) {
-            icon = (<Icon className="resizeable-window-titlebar-icon" icon={this.props.icon} />);
+            icon = (<Icon className="resizeable-window-titlebar-icon" icon={this.props.icon} size="large" />);
         }
         const bodyclasses = classnames({
             "resizeable-window-body": true,
@@ -298,6 +298,7 @@ class ResizeableWindow extends React.Component {
                 docked: !state.geometry.docked
             }
         }));
+        this.rnd.updatePosition(this.state.geometry);
     };
     toggleMinimize = () => {
         this.setState((state) => ({
