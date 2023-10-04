@@ -23,7 +23,7 @@
 
 #Search input.searchbar {
     flex: 1 1 auto;
-    height: 2.5em;
+    height: 2.5em!important;
     width: 0;
     min-width: 10ch;
 }

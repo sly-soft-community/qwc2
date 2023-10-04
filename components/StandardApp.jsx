@@ -92,7 +92,7 @@ class AppInitComponent extends React.Component {
         this.props.setColorScheme(colorScheme);
 
         // Load themes.json
-        axios.get("themes.json").then(response => {
+        axios.get("/themes.json").then(response => {
             const themes = response.data.themes || {};
             if (this.props.appConfig.themePreprocessor) {
                 this.props.appConfig.themePreprocessor(themes);

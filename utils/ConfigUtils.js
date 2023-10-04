@@ -30,7 +30,7 @@ const ConfigUtils = {
         return defaultConfig;
     },
     loadConfiguration(configParams = {}) {
-        let configFile = 'config.json';
+        let configFile = '/config.json';
         const urlQuery = url.parse(window.location.href, true).query;
         if (urlQuery.localConfig) {
             configFile = urlQuery.localConfig + '.json';
