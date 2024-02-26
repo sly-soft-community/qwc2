@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,6 +12,7 @@ import {connect} from 'react-redux';
 import LocaleUtils from '../utils/LocaleUtils';
 import {changeZoomLevel} from '../actions/map';
 import Icon from '../components/Icon';
+import ThemeUtils from '../utils/ThemeUtils';
 import './style/Buttons.css';
 
 /**
@@ -24,17 +25,24 @@ class ZoomButton extends React.Component {
         changeZoomLevel: PropTypes.func,
         currentZoom: PropTypes.number,
         direction: PropTypes.number,
+        mapMargins: PropTypes.object,
         maxZoom: PropTypes.number,
         /** The position slot index of the map button, from the bottom (0: bottom slot). */
         position: PropTypes.number,
-        splitScreen: PropTypes.object
+        theme: PropTypes.object,
+        /** Omit the button in themes matching one of these flags. */
+        themeFlagBlacklist: PropTypes.arrayOf(PropTypes.string),
+        /** Only show the button in themes matching one of these flags. */
+        themeFlagWhitelist: PropTypes.arrayOf(PropTypes.string)
     };
     render() {
+        if (!ThemeUtils.themFlagsAllowed(this.props.theme, this.props.themeFlagWhitelist, this.props.themeFlagBlacklist)) {
+            return null;
+        }
         const defaultPosition = (this.props.direction > 0 ? 4 : 3);
         const position = this.props.position >= 0 ? this.props.position : defaultPosition;
-        const splitWindows = Object.values(this.props.splitScreen);
-        const right = splitWindows.filter(entry => entry.side === 'right').reduce((res, e) => Math.max(e.size, res), 0);
-        const bottom = splitWindows.filter(entry => entry.side === 'bottom').reduce((res, e) => Math.max(e.size, res), 0);
+        const right = this.props.mapMargins.right;
+        const bottom = this.props.mapMargins.bottom;
         const style = {
             right: 'calc(1.5em + ' + right + 'px)',
             bottom: 'calc(' + bottom + 'px  + ' + (5 + 4 * position) + 'em)'
@@ -63,7 +71,8 @@ export const ZoomInPlugin = connect((state) => ({
     currentZoom: state.map.zoom,
     maxZoom: state.map.resolutions.length - 1,
     direction: +1,
-    splitScreen: state.windows.splitScreen
+    mapMargins: state.windows.mapMargins,
+    theme: state.theme.current
 }), {
     changeZoomLevel: changeZoomLevel
 })(ZoomButton);
@@ -72,7 +81,8 @@ export const ZoomOutPlugin = connect((state) => ({
     currentZoom: state.map.zoom,
     maxZoom: state.map.resolutions.length - 1,
     direction: -1,
-    splitScreen: state.windows.splitScreen
+    mapMargins: state.windows.mapMargins,
+    theme: state.theme.current
 }), {
     changeZoomLevel: changeZoomLevel
 })(ZoomButton);

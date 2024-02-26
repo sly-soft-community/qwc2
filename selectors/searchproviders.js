@@ -1,5 +1,5 @@
 /**
- * Copyright 2020-2021 Sourcepole AG
+ * Copyright 2020-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -18,13 +18,26 @@ export default (searchProviders) => createSelector(
         const availableProviders = {};
         const themeLayerNames = layers.map(layer => layer.role === LayerRole.THEME ? layer.params.LAYERS : "").join(",").split(",").filter(entry => entry);
         const themeProviders = theme && theme.current && theme.current.searchProviders ? theme.current.searchProviders : [];
+        const providerKeys = new Set();
         for (const entry of themeProviders) {
-            const provider = searchProviders[entry.key ?? entry];
+            // Omit qgis provider with field configuration, this is only supported through the FeatureSearch plugin
+            if (entry.provider === 'qgis' && entry?.params?.fields) {
+                continue;
+            }
+            // "key" is the legacy name for "provider"
+            const provider = searchProviders[entry.provider ?? entry.key ?? entry];
             if (provider) {
                 if (provider.requiresLayer && !themeLayerNames.includes(provider.requiresLayer)) {
                     continue;
                 }
-                availableProviders[entry.key ?? entry] = {
+                let key = entry.provider ?? entry.key ?? entry;
+                if (providerKeys.has(key)) {
+                    let i = 0;
+                    for (i = 0; providerKeys.has(key + "_" + i); ++i);
+                    key = key + "_" + i;
+                }
+                providerKeys.add(key);
+                availableProviders[key] = {
                     ...provider,
                     params: entry.params
                 };
@@ -34,7 +47,15 @@ export default (searchProviders) => createSelector(
             availableProviders.themes = {
                 labelmsgid: LocaleUtils.trmsg("search.themes"),
                 onSearch: (text, options, callback) => {
-                    setTimeout(() => callback({results: ThemeUtils.searchThemes(theme.themes, text)}), 50);
+                    callback({results: ThemeUtils.searchThemes(theme.themes, text)});
+                }
+            };
+        }
+        if (ConfigUtils.getConfigProp("searchThemeLayers", theme)) {
+            availableProviders.themelayers = {
+                labelmsgid: LocaleUtils.trmsg("search.themelayers"),
+                onSearch: (text, options, callback) => {
+                    callback({results: ThemeUtils.searchThemeLayers(theme.themes, text)});
                 }
             };
         }

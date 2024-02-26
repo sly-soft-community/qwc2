@@ -1,5 +1,5 @@
 /**
- * Copyright 2022 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -16,6 +16,7 @@ import utc from 'dayjs/plugin/utc';
 import {v1 as uuidv1} from 'uuid';
 import ol from 'openlayers';
 import isEqual from 'lodash.isequal';
+import isEmpty from 'lodash.isempty';
 import dateParser, { Format } from 'any-date-parser';
 import {setLayerDimensions, addLayerFeatures, refreshLayer, removeLayer, LayerRole} from '../actions/layers';
 import {setCurrentTask, setCurrentTaskBlocked} from '../actions/task';
@@ -74,7 +75,7 @@ const qgisDateFormat = new Format({
             result.offset = offset;
         }
         return result;
-    },
+    }
 });
 dateParser.addFormat(qgisDateFormat);
 
@@ -111,6 +112,14 @@ class TimeManager extends React.Component {
         defaultTimelineDisplay: PropTypes.string,
         /** The default timeline mode. One of `fixed`, `infinite`. */
         defaultTimelineMode: PropTypes.string,
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
+        geometry: PropTypes.shape({
+            initialWidth: PropTypes.number,
+            initialHeight: PropTypes.number,
+            initialX: PropTypes.number,
+            initialY: PropTypes.number,
+            initiallyDocked: PropTypes.bool
+        }),
         layerVisibilities: PropTypes.object,
         layers: PropTypes.array,
         map: PropTypes.object,
@@ -125,8 +134,9 @@ class TimeManager extends React.Component {
         removeLayer: PropTypes.func,
         setCurrentTask: PropTypes.func,
         setLayerDimensions: PropTypes.func,
-        /** The available temporal anumation step units. */
-        stepUnits: PropTypes.arrayOf(PropTypes.string)
+        /** The available temporal animation step units. */
+        stepUnits: PropTypes.arrayOf(PropTypes.string),
+        theme: PropTypes.object
     };
     static defaultProps = {
         cursorFormat: "datetime",
@@ -145,14 +155,11 @@ class TimeManager extends React.Component {
         },
         featureTimelineAvailable: true,
         stepUnits: ["s", "m", "h", "d", "M", "y"],
-        /** Default window geometry with size, position and docking status. */
-        geometry: PropTypes.shape({
-            initialWidth: PropTypes.number,
-            initialHeight: PropTypes.number,
-            initialX: PropTypes.number,
-            initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
-        }),
+        geometry: {
+            initialWidth: 800,
+            initialHeight: 320,
+            initiallyDocked: true
+        }
     };
     static defaultState = {
         timeEnabled: false,
@@ -221,6 +228,9 @@ class TimeManager extends React.Component {
         }
         if (!activated && !this.state.visible) {
             return;
+        }
+        if (this.props.theme !== prevProps.theme) {
+            this.setState({currentTimestamp: null});
         }
         if (activated || !isEqual(this.props.layerVisibilities, prevProps.layerVisibilities)) {
             this.stopAnimation();
@@ -312,9 +322,11 @@ class TimeManager extends React.Component {
             body = this.renderBody(timeValues);
         }
         return (
-            <ResizeableWindow dockable="bottom"  icon="clock" initialHeight={this.props.geometry.initialHeight}
-                initialWidth={this.props.geometry.initialWidth} initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
-                initiallyDocked={this.props.geometry.initiallyDocked} onClose={this.onClose} onGeometryChanged={this.dialogGeomChanged}
+            <ResizeableWindow dockable="bottom" icon="clock"
+                initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+                initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
+                initiallyDocked={this.props.geometry.initiallyDocked}
+                onClose={this.onClose} onGeometryChanged={this.dialogGeomChanged}
                 scrollable splitScreenWhenDocked title={LocaleUtils.tr("timemanager.title")}>
                 {body}
             </ResizeableWindow>
@@ -389,6 +401,8 @@ class TimeManager extends React.Component {
 
         const timeSpan = this.state.endTime !== null ? this.state.endTime.diff(this.state.startTime) : dayjs().diff(this.state.startTime);
         const Timeline = this.state.timelineMode === 'infinite' ? InfiniteTimeline : FixedTimeline;
+        const themeLayer = this.props.layers.find(layer => layer.role === LayerRole.THEME);
+        const filterActive = !isEmpty(themeLayer?.filterParams) || !!themeLayer?.filterGeom;
 
         return (
             <div className="time-manager-body" role="body">
@@ -413,6 +427,11 @@ class TimeManager extends React.Component {
                         {this.state.settingsPopup ? options : null}
                     </div>
                 </div>
+                {filterActive ? (
+                    <div className="time-manager-filter-warning">
+                        <Icon icon="warning" /> {LocaleUtils.tr("timemanager.filterwarning")} <button className="button" onClick={() => this.props.setCurrentTask("MapFilter")} type="button">{LocaleUtils.tr("timemanager.edit")}</button>
+                    </div>
+                ) : null}
                 <div className="time-manager-timeline">
                     <Timeline currentTimestamp={this.state.currentTimestamp}
                         dataEndTime={dayjs(this.state.timeData.values[this.state.timeData.values.length - 1]).hour(23).minute(59).second(59)}
@@ -725,7 +744,8 @@ const selector = createSelector([state => state, layerVisiblitiesSelector], (sta
         active: state.task.id === "TimeManager",
         layers: state.layers.flat,
         layerVisibilities: layerVisibilities,
-        map: state.map
+        map: state.map,
+        theme: state.theme.current
     };
 });
 

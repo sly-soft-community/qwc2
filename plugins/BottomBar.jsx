@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,9 +12,8 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import pickBy from 'lodash.pickby';
 import {changeMousePositionState} from '../actions/mousePosition';
-import {changeZoomLevel} from '../actions/map';
+import {changeZoomLevel, setBottombarHeight} from '../actions/map';
 import {openExternalUrl} from '../actions/task';
-import {showIframeDialog} from '../actions/windows';
 import CoordinateDisplayer from '../components/CoordinateDisplayer';
 import InputContainer from '../components/InputContainer';
 import displayCrsSelector from '../selectors/displaycrs';
@@ -40,18 +39,18 @@ class BottomBar extends React.Component {
         fullscreen: PropTypes.bool,
         map: PropTypes.object,
         openExternalUrl: PropTypes.func,
-        showIframeDialog: PropTypes.func,
+        setBottombarHeight: PropTypes.func,
         /** The URL of the terms label anchor. */
         termsUrl: PropTypes.string,
         /** Icon of the terms inline window. Relevant only when `termsUrlTarget` is `iframe`. */
         termsUrlIcon: PropTypes.string,
-        /** The target where to open the terms URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. */
+        /** The target where to open the terms URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. You can also use the `:iframedialog:<dialogname>:<options>` syntax to set up the inline window. */
         termsUrlTarget: PropTypes.string,
         /** The URL of the viewer title label anchor. */
         viewertitleUrl: PropTypes.string,
         /** Icon of the viewer title inline window. Relevant only when `viewertitleUrl` is `iframe`. */
         viewertitleUrlIcon: PropTypes.string,
-        /** The target where to open the viewer title URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. */
+        /** The target where to open the viewer title URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. You can also use the `:iframedialog:<dialogname>:<options>` syntax to set up the inline window. */
         viewertitleUrlTarget: PropTypes.string
     };
     static defaultProps = {
@@ -146,7 +145,7 @@ class BottomBar extends React.Component {
         }
 
         return (
-            <div id="BottomBar">
+            <div id="BottomBar" ref={this.storeHeight}>
                 <span className="bottombar-spacer" />
                 {coordinates}
                 {scales}
@@ -156,12 +155,11 @@ class BottomBar extends React.Component {
         );
     }
     openUrl = (ev, url, target, title, icon) => {
-        ev.preventDefault();
         if (target === "iframe") {
-            this.props.showIframeDialog("externallinkiframe", url, {title: title, icon: icon});
-        } else {
-            this.props.openExternalUrl(url);
+            target = ":iframedialog:externallinkiframe";
         }
+        this.props.openExternalUrl(url, target, {title, icon});
+        ev.preventDefault();
     };
     setScale = (value) => {
         const scale = parseInt(value, 10);
@@ -170,6 +168,11 @@ class BottomBar extends React.Component {
             this.props.changeZoomLevel(zoom);
         } else {
             this.props.changeZoomLevel(this.props.map.zoom);
+        }
+    };
+    storeHeight = (el) => {
+        if (el) {
+            this.props.setBottombarHeight(el.clientHeight);
         }
     };
 }
@@ -187,5 +190,5 @@ export default connect(selector, {
     changeMousePositionState: changeMousePositionState,
     changeZoomLevel: changeZoomLevel,
     openExternalUrl: openExternalUrl,
-    showIframeDialog: showIframeDialog
+    setBottombarHeight: setBottombarHeight
 })(BottomBar);

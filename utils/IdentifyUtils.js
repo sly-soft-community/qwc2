@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -36,6 +36,11 @@ function identifyRequestParams(layer, queryLayers, projection, params) {
     } else if (infoFormats.includes('application/vnd.ogc.gml')) {
         format = 'application/vnd.ogc.gml';
     }
+    const styles = (layer.params.STYLES || "").split(',');
+    const styleMap = layer.params.LAYERS.split(',').reduce((res, lyr, idx) => ({
+        ...res, [lyr]: styles[idx] ?? ''
+    }));
+    const queryStyles = queryLayers.split(',').map(lyr => styleMap[lyr] ?? '').join(",");
     return {
         url: layer.featureInfoUrl.split("?")[0],
         params: {
@@ -46,7 +51,7 @@ function identifyRequestParams(layer, queryLayers, projection, params) {
             id: layer.id,
             layers: queryLayers,
             query_layers: queryLayers,
-            styles: layer.style,
+            styles: queryStyles,
             srs: projection,
             crs: projection,
             info_format: format,
@@ -96,9 +101,6 @@ const IdentifyUtils = {
         if (CoordinatesUtils.getAxisOrder(map.projection).substr(0, 2) === 'ne' && version === '1.3.0') {
             bbox = [center[1] - dx, center[0] - dy, center[1] + dx, center[0] + dy];
         }
-        if (layer.params.FILTER) {
-            options.filter = layer.params.FILTER;
-        }
         const params = {
             height: size[0],
             width: size[1],
@@ -108,6 +110,7 @@ const IdentifyUtils = {
             i: Math.round(size[0] * 0.5),
             j: Math.round(size[1] * 0.5),
             bbox: bbox.join(","),
+            filter: layer.params.FILTER ?? '',
             ...options
         };
         return identifyRequestParams(layer, queryLayers, map.projection, params);
@@ -157,7 +160,7 @@ const IdentifyUtils = {
     },
     parseResponse(response, layer, format, clickPoint, projection, featureInfoReturnsLayerName, layers) {
         const digits = CoordinatesUtils.getUnits(projection).units === 'degrees' ? 4 : 0;
-        const posstr = clickPoint[0].toFixed(digits) + ", " + clickPoint[1].toFixed(digits);
+        const posstr = clickPoint ? clickPoint[0].toFixed(digits) + ", " + clickPoint[1].toFixed(digits) : "";
         let results = {};
         if (["application/json", "application/geojson", "application/geo+json", "GeoJSON"].includes(format)) {
             results = IdentifyUtils.parseGeoJSONResponse(response, projection, layer);

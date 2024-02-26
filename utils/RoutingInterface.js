@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -177,6 +177,11 @@ function computeRoute(costing, locations, options, callback) {
                     }))
                 };
             }),
+            locations: trip.locations.map(location => ({
+                lat: location.lat,
+                lon: location.lon,
+                orig_idx: location.original_index
+            })),
             summary: {
                 bounds: [trip.summary.min_lon, trip.summary.min_lat, trip.summary.max_lon, trip.summary.max_lat],
                 time: trip.summary.time,

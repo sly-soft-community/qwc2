@@ -1,15 +1,23 @@
 {
   "locale": "no-NO",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Kart & Verktøy",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "Eksporter DXF",
         "Editing": "Rediger",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Hjelp",
         "IdentifyPoint": "",
         "IdentifyRegion": "Identifiser med område",
@@ -21,8 +29,10 @@
         "Measure": "Mål",
         "MeasureLineString": "Måle en linje",
         "MeasurePolygon": "Måle en polygon",
+        "Portal": "",
         "Print": "Skriv ut",
         "RasterExport": "Eksporter Raster",
+        "MapExport": "Eksport kart",
         "Redlining": "Redlining",
         "Routing": "",
         "Share": "Del lenke",
@@ -31,11 +41,13 @@
         "Bookmark": "",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Kart & Verktøy"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Klikk for å kopiere",
-      "copied": "Kopiert"
+      "copied": "Kopiert",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Maksimer",
       "minimize": "Minimer",
-      "nocompatpick": "",
       "noeditablelayers": "Ingen redigerbare lag",
       "paint": "",
       "pick": "Velg",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Velg fil..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "m.o.h.",
       "distance": "Avstand",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Høyde",
-      "loading": "Beregner høydeprofil..."
+      "loading": "Beregner høydeprofil...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "Lokal fil",
       "nofeatures": "Ingen objekt kunne importeres",
       "noresults": "Ingen svar eller ugyldig URL",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "Skriv inn URL til WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Laster inn...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Format:",
+      "resolution": "Oppløsning:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Høyde",
       "title": "Posisjon"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Posisjon"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Format",
       "grid": "Rutenett",
       "layout": "Layout",
       "legend": "",
@@ -302,6 +353,7 @@
       "label": "Etikett",
       "layer": "Lag",
       "line": "Linje",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Velg",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Alle",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Aktiver lag",
       "existinglayer": "Laget finnes allerede på kartet",
+      "filter": "",
       "invisiblelayer": "Resultatet finnes på et lag som er usynlig",
+      "limittoarea": "",
       "more": "Flere resultater",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Søk",
       "searchall": "Søk etter steder eller legg til kart",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": "Tema"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": ""
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR kode",
       "directLinkTitle": "Direktelenke",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "Sosiale nettvert"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "",
       "addtotheme": "Legg til nåværende tema",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Filtrer...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

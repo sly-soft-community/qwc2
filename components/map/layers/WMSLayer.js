@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,7 @@ import url from 'url';
 import axios from 'axios';
 import CoordinatesUtils from '../../../utils/CoordinatesUtils';
 import ConfigUtils from '../../../utils/ConfigUtils';
-import MapUtils from '../../../utils/MapUtils';
+import MiscUtils from '../../../utils/MiscUtils';
 
 
 function wmsToOpenlayersOptions(options) {
@@ -36,6 +36,9 @@ function wmsImageLoadFunction(image, src) {
     if (src.length > maxUrlLength) {
         // Switch to POST if url is too long
         const urlParts = src.split("?");
+        if (location.origin === (new URL(urlParts)).origin) {
+            urlParts[1] += "&csrf_token=" + MiscUtils.getCsrfToken();
+        }
         const options = {
             headers: {'content-type': 'application/x-www-form-urlencoded'},
             responseType: "blob"
@@ -64,16 +67,18 @@ export default {
         }
         if (!queryParameters.TILED || !options.bbox) {
             const layer = new ol.layer.Image({
-                minResolution: typeof options.minScale === 'number' ? MapUtils.getResolutionsForScales([options.minScale], options.projection)[0] : undefined,
-                maxResolution: typeof options.maxScale === 'number' ? MapUtils.getResolutionsForScales([options.maxScale], options.projection)[0] : undefined,
+                minResolution: options.minResolution,
+                maxResolution: options.maxResolution,
                 source: new ol.source.ImageWMS({
                     url: options.url.split("?")[0],
                     serverType: options.serverType,
                     params: queryParameters,
                     ratio: options.ratio || 1,
                     hidpi: ConfigUtils.getConfigProp("wmsHidpi") !== false ? true : false,
-                    imageLoadFunction: (image, src) => wmsImageLoadFunction(image.getImage(), src)
-                })
+                    imageLoadFunction: (image, src) => wmsImageLoadFunction(image.getImage(), src),
+                    ...(options.sourceConfig || {})
+                }),
+                ...(options.layerConfig || {})
             });
             layer.set("empty", !queryParameters.LAYERS);
             return layer;
@@ -86,16 +91,18 @@ export default {
                 resolutions: map.getView().getResolutions()
             });
             const layer = new ol.layer.Tile({
-                minResolution: typeof options.minScale === 'number' ? MapUtils.getResolutionsForScales([options.minScale], options.projection)[0] : undefined,
-                maxResolution: typeof options.maxScale === 'number' ? MapUtils.getResolutionsForScales([options.maxScale], options.projection)[0] : undefined,
+                minResolution: options.minResolution,
+                maxResolution: options.maxResolution,
                 source: new ol.source.TileWMS({
                     urls: [options.url.split("?")[0]],
                     params: queryParameters,
                     serverType: options.serverType,
                     tileGrid: tileGrid,
                     hidpi: ConfigUtils.getConfigProp("wmsHidpi") !== false ? true : false,
-                    tileLoadFunction: (imageTile, src) => wmsImageLoadFunction(imageTile.getImage(), src)
-                })
+                    tileLoadFunction: (imageTile, src) => wmsImageLoadFunction(imageTile.getImage(), src),
+                    ...(options.sourceConfig || {})
+                }),
+                ...(options.layerConfig || {})
             });
             layer.set("empty", !queryParameters.LAYERS);
             return layer;
@@ -106,6 +113,11 @@ export default {
             let changed = (oldOptions.rev || 0) !== (newOptions.rev || 0);
             const oldParams = wmsToOpenlayersOptions(oldOptions);
             const newParams = wmsToOpenlayersOptions(newOptions);
+            Object.keys(oldParams).forEach(key => {
+                if (!(key in newParams)) {
+                    newParams[key] = undefined;
+                }
+            });
             if (!changed) {
                 changed = Object.keys(newParams).find(key => {
                     return newParams[key] !== oldParams[key];

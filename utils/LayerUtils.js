@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -14,6 +14,7 @@ import ConfigUtils from './ConfigUtils';
 import CoordinatesUtils from './CoordinatesUtils';
 import MapUtils from './MapUtils';
 import {LayerRole} from '../actions/layers';
+import VectorLayerUtils from './VectorLayerUtils';
 
 const LayerUtils = {
     restoreLayerParams(themeLayer, layerConfigs, permalinkLayers, externalLayers) {
@@ -25,6 +26,10 @@ const LayerUtils = {
                 entry.sublayer.opacity = layerConfig.opacity;
                 entry.sublayer.visibility = layerConfig.visibility || layerConfig.tristate;
                 entry.sublayer.tristate = layerConfig.tristate;
+                entry.sublayer.style = layerConfig.style;
+                if (!entry.sublayer.style) {
+                    entry.sublayer.style = !isEmpty(entry.sublayer.styles) ? Object.keys(entry.sublayer.styles)[0] : "";
+                }
             } else {
                 entry.sublayer.visibility = false;
             }
@@ -55,6 +60,10 @@ const LayerUtils = {
                     entry.sublayer.opacity = layerConfig.opacity;
                     entry.sublayer.visibility = layerConfig.visibility || layerConfig.tristate;
                     entry.sublayer.tristate = layerConfig.tristate;
+                    entry.sublayer.style = layerConfig.style;
+                    if (!entry.sublayer.style) {
+                        entry.sublayer.style = !isEmpty(entry.sublayer.styles) ? Object.keys(entry.sublayer.styles)[0] : "";
+                    }
                     reordered.push(entry);
                 }
             } else if (layerConfig.type === 'separator') {
@@ -97,6 +106,7 @@ const LayerUtils = {
             name: layerConfig.name,
             opacity: layerConfig.opacity,
             visibility: layerConfig.visibility,
+            style: layerConfig.style,
             params: layerConfig.params
         });
         return LayerUtils.explodeLayers([{
@@ -131,8 +141,9 @@ const LayerUtils = {
             } else {
                 layerNames.push(sublayer.name);
                 opacities.push(Number.isInteger(sublayer.opacity) ? sublayer.opacity : 255);
-                styles.push(sublayer.style || "");
-                if (sublayer.queryable) {
+                // Only specify style if more than one style choice exists
+                styles.push(Object.keys(sublayer.styles || {}).length > 1 ? (sublayer.style || "") : "");
+                if (sublayer.queryable && !sublayer.omitFromQueryLayers) {
                     queryable.push(sublayer.name);
                 }
                 if (visibilities) {
@@ -145,18 +156,24 @@ const LayerUtils = {
         const params = layer.params || {};
         let newParams = {};
         let queryLayers = [];
+        let initialOpacities = undefined;
 
         if (!Array.isArray(layer.sublayers)) {
+            // Background layers may just contain layer.params.OPACITIES
+            // User layers will be controlled with layer.opacity, and value will be replicated in layer.params.OPACITIES
+            // => Store the initial layer.params.OPACITIES as initialOpacities, compute actual opacities
+            // by multipliying layer.opacity with initialOpacities
+            initialOpacities = layer.initialOpacities ?? params.OPACITIES ?? "";
             const layers = (params.LAYERS || layer.name).split(",").filter(Boolean);
-            const opacities = (params.OPACITIES || "").split(",").filter(Boolean);
+            const opacities = initialOpacities.split(",").filter(Boolean);
             const opacityMult = (layer.opacity ?? 255) / 255;
             newParams = {
                 LAYERS: layers.join(","),
-                OPACITIES: layers.map((x, i) => (opacities[i] ?? "255") * opacityMult).join(","),
-                STYLES: params.STYLES ?? "",
+                OPACITIES: layers.map((x, i) => Math.round((opacities[i] ?? "255") * opacityMult)).map(Math.round).join(","),
+                STYLES: layer.style ?? params.STYLES ?? layers.map(x => "").join(","),
                 ...layer.dimensionValues
             };
-            queryLayers = layer.queryable ? [layer.name] : [];
+            queryLayers = layer.queryable && !layer.omitFromQueryLayers ? [layer.name] : [];
         } else {
             let layerNames = [];
             let opacities = [];
@@ -175,15 +192,36 @@ const LayerUtils = {
             }
             newParams = {
                 LAYERS: layerNames.join(","),
-                OPACITIES: opacities.join(","),
+                OPACITIES: opacities.map(Math.round).join(","),
                 STYLES: styles.join(","),
                 ...layer.dimensionValues
             };
+            if (layer.filterParams) {
+                newParams.FILTER = Object.entries(layer.filterParams).reduce((res, [layername, filters]) => {
+                    if (!layerNames.includes(layername)) {
+                        return res;
+                    }
+                    return [...res, layername + ":" + filters.map(expr => Array.isArray(expr) ? LayerUtils.formatFilterExpr(expr) : "AND").join(" ")];
+                }, []).join(";");
+            }
+            if (layer.filterGeom) {
+                newParams.FILTER_GEOM = VectorLayerUtils.geoJSONGeomToWkt(layer.filterGeom);
+            }
         }
+
         return {
             params: newParams,
-            queryLayers: queryLayers
+            queryLayers: queryLayers,
+            initialOpacities: initialOpacities
         };
+    },
+    formatFilterExpr(expr) {
+        if (expr.length === 3 && typeof expr[0] === "string" && typeof expr[2] === "string") {
+            const op = expr[1].toUpperCase();
+            return `"${expr[0]}" ${op} ${expr[2]}`;
+        } else {
+            return "( " + expr.map(entry => Array.isArray(entry) ? this.formatFilterExpr(entry) : entry.toUpperCase()).join(" ") + " )";
+        }
     },
     addUUIDs(group, usedUUIDs = new Set()) {
         group.uuid = !group.uuid || usedUUIDs.has(group.uuid) ? uuidv4() : group.uuid;
@@ -230,6 +268,9 @@ const LayerUtils = {
             if (opacities[idx] < 255) {
                 param += "[" + (100 - Math.round(opacities[idx] / 255 * 100)) + "]";
             }
+            if (styles[idx]) {
+                param += "{" + styles[idx] + "}";
+            }
             if (visibilities[idx] === 0) {
                 param += '!';
             } else if (visibilities[idx] === 0.5) {
@@ -244,11 +285,14 @@ const LayerUtils = {
 
     },
     splitLayerUrlParam(entry) {
-        const nameOpacityPattern = /([^[]+)\[(\d+)]/;
+        const opacityPattern = /\[(\d+)\]/;
+        const stylePattern = /{([^}]+)}/;
+        const extPattern = /^(\w+):(.*)#([^#]+)$/;
         const id = uuidv4();
         let type = 'theme';
         let layerUrl = null;
         let opacity = 255;
+        let style = '';
         let visibility = true;
         let tristate = false;
         if (entry.endsWith('!')) {
@@ -259,21 +303,25 @@ const LayerUtils = {
             tristate = true;
             entry = entry.slice(0, -1);
         }
-        let name = entry;
-        let match = nameOpacityPattern.exec(entry);
-        if (match) {
-            name = match[1];
-            opacity = Math.round(255 - parseFloat(match[2]) / 100 * 255);
+        let m = null;
+        if ((m = entry.match(opacityPattern))) {
+            opacity = Math.round(255 - parseFloat(m[1]) / 100 * 255);
+            entry = entry.slice(0, m.index) + entry.slice(m.index + m[0].length);
         }
-        if ((match = name.match(/^(\w+):(.*)#([^#]+)$/))) {
-            type = match[1];
-            layerUrl = match[2];
-            name = match[3];
+        if ((m = entry.match(stylePattern))) {
+            style = m[1];
+            entry = entry.slice(0, m.index) + entry.slice(m.index + m[0].length);
+        }
+        let name = entry;
+        if ((m = entry.match(extPattern))) {
+            type = m[1];
+            layerUrl = m[2];
+            name = m[3];
         } else if (name.startsWith('sep:')) {
             type = 'separator';
             name = name.slice(4);
         }
-        return {id, type, url: layerUrl, name, opacity, visibility, tristate};
+        return {id, type, url: layerUrl, name, opacity, style, visibility, tristate};
     },
     pathEqualOrBelow(parent, child) {
         return isEqual(child.slice(0, parent.length), parent);
@@ -355,7 +403,7 @@ const LayerUtils = {
                 // Prevent moving an entry out of a containing group
                 const idx = delta < 0 ? indices[0] : indices[indices.length - 1];
                 const level = sublayerpath.length;
-                if (level > exploded[idx + delta].path.length || !isEqual(exploded[idx + delta].path.slice(0, level - 1), sublayerpath.slice(0, -1))) {
+                if (level > exploded[idx + delta].path.length || (level > 0 && !isEqual(exploded[idx + delta].path.slice(0, level - 1), sublayerpath.slice(0, -1)))) {
                     return layers;
                 }
                 // Avoid splitting sibling groups when reordering
@@ -402,9 +450,6 @@ const LayerUtils = {
                 this.explodeSublayers(layer, layer, exploded);
             } else {
                 const newLayer = {...layer};
-                if (newLayer.sublayers) {
-                    newLayer.sublayers = [...newLayer.sublayers];
-                }
                 exploded.push({layer: newLayer, path: [], sublayer: newLayer});
             }
         }
@@ -461,6 +506,7 @@ const LayerUtils = {
         for (const layer of newlayers) {
             if (layer.type === "wms") {
                 Object.assign(layer, LayerUtils.buildWMSLayerParams(layer));
+                Object.assign(layer, LayerUtils.recomputeLayerBBox(layer));
             }
         }
         return newlayers;
@@ -488,9 +534,9 @@ const LayerUtils = {
             }
         }
     },
-    getSublayerNames(layer) {
-        return [layer.name].concat((layer.sublayers || []).reduce((list, sublayer) => {
-            return list.concat([...this.getSublayerNames(sublayer)]);
+    getSublayerNames(layer, toplevel = true) {
+        return [toplevel && layer.sublayers ? null : layer.name].concat((layer.sublayers || []).reduce((list, sublayer) => {
+            return list.concat([...this.getSublayerNames(sublayer, false)]);
         }, [])).filter(x => x);
     },
     mergeSubLayers(baselayer, addlayer) {
@@ -557,7 +603,7 @@ const LayerUtils = {
         }
         let visible = 0;
         layer.sublayers.map(sublayer => {
-            const sublayervisibility = sublayer.visibility === undefined ? true : sublayer.visibility;
+            const sublayervisibility = sublayer.visibility ?? true;
             if (sublayer.sublayers && sublayervisibility) {
                 visible += LayerUtils.computeLayerVisibility(sublayer);
             } else {
@@ -565,6 +611,28 @@ const LayerUtils = {
             }
         });
         return visible / layer.sublayers.length;
+    },
+    computeLayerOpacity(layer) {
+        if (isEmpty(layer.sublayers)) {
+            return layer.opacity ?? 255;
+        }
+        let opacity = 0;
+        layer.sublayers.map(sublayer => {
+            opacity += LayerUtils.computeLayerOpacity(sublayer);
+        });
+        return opacity / layer.sublayers.length;
+    },
+    computeLayerQueryable(layer) {
+        let queryable = 0;
+        layer.sublayers.map(sublayer => {
+            const sublayerqueryable = !sublayer.omitFromQueryLayers ?? true;
+            if (sublayer.sublayers && sublayerqueryable) {
+                queryable += LayerUtils.computeLayerQueryable(sublayer);
+            } else {
+                queryable += sublayerqueryable ? 1 : 0;
+            }
+        });
+        return queryable / layer.sublayers.length;
     },
     cloneLayer(layer, sublayerpath) {
         const newlayer = {...layer};
@@ -609,7 +677,7 @@ const LayerUtils = {
             layer.sublayers = layer.sublayers.map(sublayer => {
                 if (sublayer.externalLayer) {
                     const externalLayer = {...sublayer.externalLayer};
-                    LayerUtils.completeExternalLayer(externalLayer, sublayer);
+                    LayerUtils.completeExternalLayer(externalLayer, sublayer, toplayer.mapCrs);
                     toplayer.externalLayerMap[sublayer.name] = externalLayer;
                     sublayer = {...sublayer};
                     delete sublayer.externalLayer;
@@ -621,7 +689,7 @@ const LayerUtils = {
             });
         }
     },
-    completeExternalLayer(externalLayer, sublayer) {
+    completeExternalLayer(externalLayer, sublayer, mapCrs) {
         externalLayer.title = externalLayer.title || (sublayer || {}).title || externalLayer.name;
         externalLayer.uuid = uuidv4();
         if (externalLayer.type === "wms" || externalLayer.params) {
@@ -637,6 +705,15 @@ const LayerUtils = {
                     break;
                 }
             }
+        } else if (externalLayer.type === "mvt") {
+            externalLayer.projection = mapCrs;
+            if (externalLayer.tileGridName) {
+                externalLayer.tileGridConfig = (ConfigUtils.getConfigProp("mvtTileGrids") || {})[externalLayer.tileGridName];
+                if (!externalLayer.tileGridConfig) {
+                    console.warn("Tile grid config not found: " + externalLayer.tileGridName);
+                }
+            }
+
         }
     },
     getLegendUrl(layer, sublayer, scale, map, bboxDependentLegend, scaleDependentLegend, extraLegendParameters) {
@@ -681,14 +758,17 @@ const LayerUtils = {
             delete urlParts.search;
             return url.format(urlParts);
         } else {
-            const layername = layer === sublayer ? layer.name.replace(/.*\//, '') : sublayer.name;
+            const layername = layer === sublayer ? layer.params.LAYERS.split(",").reverse().join(",") : sublayer.name;
+            const style = layer === sublayer ? layer.params.STYLES.split(",").reverse().join(",") : sublayer.style;
             const urlParts = url.parse(layer.legendUrl, true);
             urlParts.query = {
                 VERSION: layer.version,
                 ...urlParts.query,
                 ...requestParams,
-                LAYER: layername
-            };
+                LAYER: layername,
+                STYLES: style,
+                FILTER: layer.params.FILTER ?? ''
+            }
             delete urlParts.search;
             return url.format(urlParts);
         }
@@ -700,37 +780,46 @@ const LayerUtils = {
         const qgisServerVersion = (ConfigUtils.getConfigProp("qgisServerVersion") || 3);
         if (qgisServerVersion >= 3) {
             if (layer.type === "wms") {
-                const names = layer.params.LAYERS.split(",");
-                const opacities = layer.params.OPACITIES.split(",");
-                for (let idx = 0; idx < names.length; ++idx) {
-                    const identifier = String.fromCharCode(65 + (counterRef[0]++));
-                    params.LAYERS.push("EXTERNAL_WMS:" + identifier);
-                    params.OPACITIES.push(opacities[idx]);
-                    params.COLORS.push("");
-                    let layerUrl = layer.url;
-                    const urlParts = url.parse(layerUrl, true);
-                    // Resolve relative urls
-                    if (!urlParts.host) {
-                        const locationParts = url.parse(window.location.href);
-                        urlParts.protocol = locationParts.protocol;
-                        urlParts.host = locationParts.host;
-                        delete urlParts.search;
-                        layerUrl = url.format(urlParts);
-                    }
-                    params[identifier + ":url"] = layerUrl;
-                    params[identifier + ":layers"] = names[idx];
-                    params[identifier + ":format"] = "image/png";
-                    params[identifier + ":crs"] = printCrs;
-                    params[identifier + ":styles"] = "";
-                    params[identifier + ":dpiMode"] = "7";
-                    params[identifier + ":contextualWMSLegend"] = "0";
-                    if (layer.url.includes("?")) {
-                        params[identifier + ":IgnoreGetMapUrl"] = "1";
-                    }
-                    Object.entries(layer.extwmsparams || {}).forEach(([key, value]) => {
-                        params[identifier + ":" + key] = value;
-                    });
+                let layerUrl = layer.url;
+                const urlParts = url.parse(layerUrl, true);
+                // Resolve relative urls
+                if (!urlParts.host) {
+                    const locationParts = url.parse(window.location.href);
+                    urlParts.protocol = locationParts.protocol;
+                    urlParts.host = locationParts.host;
+                    delete urlParts.search;
+                    layerUrl = url.format(urlParts);
                 }
+                const identifier = String.fromCharCode(65 + (counterRef[0]++));
+                params.LAYERS.push("EXTERNAL_WMS:" + identifier);
+                params.STYLES.push("");
+                params.COLORS.push("");
+                params[identifier + ":url"] = layerUrl;
+                params[identifier + ":layers"] = layer.params.LAYERS;
+                params[identifier + ":styles"] = layer.params.STYLES;
+                params[identifier + ":format"] = "image/png";
+                if (layer.serverType === 'qgis' && layer.params.FILTER) {
+                    params[identifier + ":filter"] = layer.params.FILTER;
+                }
+                params[identifier + ":crs"] = printCrs;
+                params[identifier + ":dpiMode"] = "7";
+                params[identifier + ":contextualWMSLegend"] = "0";
+                // If only one layer is request, request external layer with full opacity
+                // and control opacity at QGIS server level (helps preserving opacity if external server does not support OPACITIES)
+                const opacities = layer.params.OPACITIES.split(",");
+                if (opacities.length === 1) {
+                    params.OPACITIES.push(opacities[0]);
+                    params[identifier + ":opacities"] = "255";
+                } else {
+                    params.OPACITIES.push("255");
+                    params[identifier + ":opacities"] = layer.params.OPACITIES;
+                }
+                if (layer.url.includes("?")) {
+                    params[identifier + ":IgnoreGetMapUrl"] = "1";
+                }
+                Object.entries(layer.extwmsparams || {}).forEach(([key, value]) => {
+                    params[identifier + ":" + key] = value;
+                });
             }
         } else if (qgisServerVersion === 2) {
             if (layer.type === "wms") {
@@ -741,20 +830,24 @@ const LayerUtils = {
                     params.LAYERS.push(`wms:${layer.url}#${names[idx]}`);
                     params.OPACITIES.push(opacities[idx]);
                     params.COLORS.push("");
+                    params.STYLES.push("");
                 }
             } else if (layer.type === "wfs") {
                 // Handled by qwc-print-service
                 params.LAYERS.push(`wfs:${layer.url}#${layer.name}`);
                 params.OPACITIES.push(layer.opacity);
                 params.COLORS.push(layer.color);
+                params.STYLES.push("");
             }
         }
     },
-    collectPrintParams(layers, theme, printScale, printCrs, printExternalLayers) {
+    collectPrintParams(layers, theme, printScale, printCrs, printExternalLayers, omitBackgroundLayer) {
         const params = {
             LAYERS: [],
             OPACITIES: [],
-            COLORS: []
+            STYLES: [],
+            COLORS: [],
+            FILTER: ''
         };
         const counterRef = [0];
 
@@ -762,14 +855,16 @@ const LayerUtils = {
             if (layer.role === LayerRole.THEME && layer.params.LAYERS) {
                 params.LAYERS.push(layer.params.LAYERS);
                 params.OPACITIES.push(layer.params.OPACITIES);
+                params.STYLES.push(layer.params.STYLES);
                 params.COLORS.push(layer.params.LAYERS.split(",").map(() => "").join(","));
+                params.FILTER = layer.params.FILTER ?? '';
             } else if (printExternalLayers && layer.role === LayerRole.USERLAYER && layer.visibility !== false && LayerUtils.layerScaleInRange(layer, printScale)) {
                 LayerUtils.addExternalLayerPrintParams(layer, params, printCrs, counterRef);
             }
         }
 
         const backgroundLayer = layers.find(layer => layer.role === LayerRole.BACKGROUND && layer.visibility === true);
-        if (backgroundLayer) {
+        if (backgroundLayer && !omitBackgroundLayer) {
             const backgroundLayerName = backgroundLayer.name;
             const themeBackgroundLayer = theme.backgroundLayers.find(entry => entry.name === backgroundLayerName);
             const printBackgroundLayer = themeBackgroundLayer ? themeBackgroundLayer.printLayer : null;
@@ -786,9 +881,20 @@ const LayerUtils = {
                     }
                 }
                 if (printBgLayerName) {
-                    params.LAYERS.push(printBgLayerName);
-                    params.OPACITIES.push("255");
-                    params.COLORS.push("");
+                    let match = null;
+                    if ((match = printBgLayerName.match(/^(\w+):(.*)#([^#]+)$/)) && match[1] === "wms") {
+                        const layer = {
+                            type: 'wms',
+                            params: {LAYERS: match[3], OPACITIES: '255', STYLES: ''},
+                            url: match[2]
+                        };
+                        LayerUtils.addExternalLayerPrintParams(layer, params, printCrs, counterRef);
+                    } else {
+                        params.LAYERS.push(printBgLayerName);
+                        params.OPACITIES.push("255");
+                        params.COLORS.push("");
+                        params.STYLES.push("");
+                    }
                 }
             } else if (printExternalLayers) {
                 // Inject client-side wms as external layer for print
@@ -803,6 +909,7 @@ const LayerUtils = {
         params.LAYERS = params.LAYERS.reverse().join(",");
         params.OPACITIES = params.OPACITIES.reverse().join(",");
         params.COLORS = params.COLORS.reverse().join(",");
+        params.STYLES = params.STYLES.reverse().join(",");
         return params;
     },
     getTimeDimensionValues(layer) {
@@ -875,6 +982,32 @@ const LayerUtils = {
             };
         }
         return copyrights;
+    },
+    recomputeLayerBBox(layer) {
+        if (isEmpty(layer.sublayers)) {
+            return layer;
+        }
+        let bounds = null;
+        const newlayer = {...layer};
+        newlayer.sublayers = newlayer.sublayers.map((sublayer) => {
+            sublayer = LayerUtils.recomputeLayerBBox(sublayer);
+            if (!bounds && sublayer.bbox && sublayer.bbox.bounds) {
+                bounds = CoordinatesUtils.reprojectBbox(sublayer.bbox.bounds, sublayer.bbox.crs, "EPSG:4326");
+            } else if (bounds) {
+                const sublayerbounds = CoordinatesUtils.reprojectBbox(sublayer.bbox.bounds, sublayer.bbox.crs, "EPSG:4326");
+                bounds = [
+                    Math.min(bounds[0], sublayerbounds[0]),
+                    Math.min(bounds[1], sublayerbounds[1]),
+                    Math.max(bounds[2], sublayerbounds[2]),
+                    Math.max(bounds[3], sublayerbounds[3])
+                ];
+            }
+            return sublayer;
+        });
+        if (bounds) {
+            newlayer.bbox = {bounds, crs: "EPSG:4326"};
+        }
+        return newlayer;
     }
 };
 

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -13,7 +13,7 @@ import ConfigUtils from './ConfigUtils';
 const LocaleUtils = {
     tr(key) {
         const state = StandardStore.get().getState();
-        const text = key in state.locale.messages ? (state.locale.messages[key] ?? key) : key;
+        const text = key in state.locale.messages ? (state.locale.messages[key] || state.locale.fallbackMessages[key] || key) : key;
 
         const args = Array.prototype.slice.call(arguments, 1);
         if (args.length > 0) {

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -29,7 +29,8 @@ import {
     REMOVE_ALL_LAYERS,
     REPLACE_PLACEHOLDER_LAYER,
     SET_SWIPE,
-    SET_LAYERS
+    SET_LAYERS,
+    SET_FILTER
 } from '../actions/layers';
 
 
@@ -51,16 +52,20 @@ function propagateLayerProperty(newlayer, property, value, path = null) {
 
 const defaultState = {
     flat: [],
+    loading: [],
     swipe: null
 };
 
 export default function layers(state = defaultState, action) {
     switch (action.type) {
     case SET_LAYER_LOADING: {
-        const newLayers = (state.flat || []).map((layer) => {
-            return layer.id === action.layerId ? {...layer, loading: action.loading} : layer;
-        });
-        return {...state, flat: newLayers};
+        const loading = state.loading.filter(layerId => layerId !== action.layerId);
+        if (action.loading) {
+            loading.push(action.layerId);
+        }
+        return {
+            ...state, loading: loading
+        };
     }
     case CHANGE_LAYER_PROPERTY: {
         const targetLayer = state.flat.find((layer) => {return layer.uuid === action.layerUuid; });
@@ -153,6 +158,8 @@ export default function layers(state = defaultState, action) {
                 inspos = action.pos;
             }
             newLayers.splice(inspos, 0, newLayer);
+            // Compress layers if possible
+            newLayers = LayerUtils.implodeLayers(LayerUtils.explodeLayers(newLayers));
         }
         UrlParams.updateParams({l: LayerUtils.buildWMSLayerUrlParam(newLayers)});
         if (newLayer.role === LayerRole.BACKGROUND && newLayer.visibility) {
@@ -308,6 +315,21 @@ export default function layers(state = defaultState, action) {
     }
     case SET_LAYERS: {
         return {...state, flat: action.layers};
+    }
+    case SET_FILTER: {
+        return {...state, flat: state.flat.map(layer => {
+            if (layer.type === 'wms' && layer.serverType === 'qgis') {
+                const newLayer = {
+                    ...layer,
+                    filterParams: action.filter,
+                    filterGeom: action.filterGeom
+                };
+                Object.assign(newLayer, LayerUtils.buildWMSLayerParams(newLayer));
+                return newLayer;
+            } else {
+                return layer;
+            }
+        })};
     }
     default:
         return state;

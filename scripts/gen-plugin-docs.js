@@ -35,11 +35,17 @@ output += "================\n";
 output += "\n";
 
 pluginData.forEach(plugin => {
+    if (!plugin.description) {
+        return;
+    }
     output += `* [${plugin.displayName}](#${plugin.displayName.toLowerCase()})\n`;
 });
 output += "\n";
 output += "---\n";
 pluginData.forEach(plugin => {
+    if (!plugin.description) {
+        return;
+    }
     output += `${plugin.displayName}<a name="${plugin.displayName.toLowerCase()}"></a>\n`;
     output += "----------------------------------------------------------------\n";
     output += plugin.description + "\n";
@@ -54,7 +60,7 @@ pluginData.forEach(plugin => {
         ++documentedProps;
         const defaultValue = prop.defaultValue ? prop.defaultValue.value.split("\n").map(x => '`' + x.replace(' ', ' ') + '`').join("<br />") : "`undefined`";
         const type = "`" + parsePropType(prop.type).replaceAll(' ', ' ').replaceAll("\n", "`<br />`") + "`";
-        output += `| ${name} | ${type} | ${prop.description} | ${defaultValue} |\n`;
+        output += `| ${name} | ${type} | ${prop.description.replaceAll("\n", "<br />")} | ${defaultValue} |\n`;
     });
     if (documentedProps === 0) {
         output += "|\n";

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -60,6 +60,9 @@ const CoordinatesUtils = {
      * @return {array} [minx, miny, maxx, maxy]
      */
     reprojectBbox(bbox, source, dest) {
+        if (source === dest) {
+            return [...bbox];
+        }
         const sw = CoordinatesUtils.reproject([bbox[0], bbox[1]], source, dest);
         const ne = CoordinatesUtils.reproject([bbox[2], bbox[3]], source, dest);
         return [...sw, ...ne];

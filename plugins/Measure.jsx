@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -35,8 +35,9 @@ class Measure extends React.Component {
         showMeasureModeSwitcher: PropTypes.bool,
         /** Whether snapping is available when editing. */
         snapping: PropTypes.bool,
-        /** Whether snapping is enabled by default when editing. */
-        snappingActive: PropTypes.bool
+        /** Whether snapping is enabled by default when editing.
+         *  Either `false`, `edge`, `vertex` or `true` (i.e. both vertex and edge). */
+        snappingActive: PropTypes.oneOfType([PropTypes.bool, PropTypes.string])
     };
     static defaultProps = {
         showMeasureModeSwitcher: true,

@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -28,8 +28,12 @@ class ThemeSwitcher extends React.Component {
         /** Whether to allow collapsing theme groups. */
         collapsibleGroups: PropTypes.bool,
         currentTask: PropTypes.object,
+        /** Whether to show an icon to select the default theme/bookmark (of a logged in user). */
+        showDefaultThemeSelector: PropTypes.bool,
         /** Whether to show the LayerTree by default after switching the theme. */
         showLayerAfterChangeTheme: PropTypes.bool,
+        /** Wether to show the theme filter field in the top bar. **/
+        showThemeFilter: PropTypes.bool,
         /** The side of the application on which to display the sidebar. */
         side: PropTypes.string,
         /** The default window size for the theme layers dialog. */
@@ -42,6 +46,8 @@ class ThemeSwitcher extends React.Component {
     };
     static defaultProps = {
         width: "50%",
+        showThemeFilter: true,
+        showDefaultThemeSelector: true,
         showLayerAfterChangeTheme: false,
         themeLayersListWindowSize: {width: 400, height: 300},
         side: 'right'
@@ -51,7 +57,7 @@ class ThemeSwitcher extends React.Component {
     };
     render() {
         const allowAddingOtherThemes = ConfigUtils.getConfigProp("allowAddingOtherThemes", this.props.activeTheme) ===  true;
-        const extraTitlebarContent = (
+        const themeFilter = this.props.showThemeFilter ? (
             <InputContainer className="theme-switcher-filter">
                 <input onChange={ev => this.setState({filter: ev.target.value})}
                     placeholder={LocaleUtils.tr("themeswitcher.filter")}
@@ -59,7 +65,8 @@ class ThemeSwitcher extends React.Component {
                     type="text" value={this.state.filter}/>
                 <Icon icon="remove" onClick={() => this.setState({filter: ""})} role="suffix" />
             </InputContainer>
-        );
+        ) : null;
+        const extraTitlebarContent = (themeFilter);
         return (
             <div>
                 <SideBar extraTitlebarContent={extraTitlebarContent} icon="themes" id="ThemeSwitcher" minWidth="16em" side={this.props.side}
@@ -71,7 +78,8 @@ class ThemeSwitcher extends React.Component {
                                 allowAddingOtherThemes={allowAddingOtherThemes}
                                 collapsibleGroups={this.props.collapsibleGroups}
                                 filter={this.state.filter}
-                                showLayerAfterChangeTheme={this.props.showLayerAfterChangeTheme} />
+                                showDefaultThemeSelector={this.props.showDefaultThemeSelector}
+                                showLayerAfterChangeTheme={this.props.showLayerAfterChangeTheme}/>
                         )
                     })}
                 </SideBar>

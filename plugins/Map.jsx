@@ -1,6 +1,6 @@
 /**
  * Copyright 2016 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -10,11 +10,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+import isEmpty from 'lodash.isempty';
 import {LayerRole} from '../actions/layers';
 import OlMap from '../components/map/OlMap';
 import OlLayer from '../components/map/OlLayer';
 import Spinner from '../components/Spinner';
-import MapUtils from '../utils/MapUtils';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 
@@ -27,6 +27,7 @@ import './style/Map.css';
 class MapPlugin extends React.Component {
     static propTypes = {
         layers: PropTypes.array,
+        loadingLayers: PropTypes.array,
         map: PropTypes.object,
         /** Zoom duration in ms, rotation in degrees, panStepSize and panPageSize as fraction of map width/height. */
         mapOptions: PropTypes.shape({
@@ -35,7 +36,8 @@ class MapPlugin extends React.Component {
             rotation: PropTypes.number,
             panStepSize: PropTypes.number,
             panPageSize: PropTypes.number,
-            constrainExtent: PropTypes.bool
+            constrainExtent: PropTypes.bool,
+            kineticPanParams: PropTypes.object,
         }),
         /** Whether to display the loading spinner when layers are loading. */
         showLoading: PropTypes.bool,
@@ -67,7 +69,6 @@ class MapPlugin extends React.Component {
     }
     componentDidUpdate(prevProps) {
         if (this.props.layers !== prevProps.layers || (this.props.swipe !== null) !== (prevProps.swipe !== null)) {
-            const mapScale = MapUtils.computeForZoom(this.props.map.scales, this.props.map.zoom);
             const renderLayers = [];
 
             // Inject external layers
@@ -80,21 +81,25 @@ class MapPlugin extends React.Component {
                         if (layer.externalLayerMap && layer.externalLayerMap[sublayers[i]]) {
                             // Sublayer is mapped to an external layer
                             const sublayer = LayerUtils.searchSubLayer(layer, "name", sublayers[i]);
-                            const sublayerVisible = LayerUtils.layerScaleInRange(sublayer, mapScale);
-                            if (sublayerVisible) {
-                                renderLayers.push({
+                            if (sublayer.visibility) {
+                                const extlayer = {
                                     ...layer.externalLayerMap[sublayers[i]],
-                                    params: {
+                                    rev: layer.rev,
+                                    opacity: parseInt(opacities[i], 10),
+                                    visibility: true,
+                                    role: LayerRole.THEME,
+                                    minScale: sublayer.minScale,
+                                    maxScale: sublayer.maxScale
+                                };
+                                if (extlayer.type === "wms") {
+                                    extlayer.params = {
                                         ...layer.params,
                                         ...layer.externalLayerMap[sublayers[i]].params,
                                         OPACITIES: opacities[i],
                                         STYLES: ""
-                                    },
-                                    rev: layer.rev,
-                                    opacity: parseInt(opacities[i], 10),
-                                    visibility: true,
-                                    role: LayerRole.THEME
-                                });
+                                    };
+                                }
+                                renderLayers.push(extlayer);
                             }
                         } else if (renderLayers.length > 0 && renderLayers[renderLayers.length - 1].id === layer.id) {
                             // Compress with previous renderlayer
@@ -132,7 +137,7 @@ class MapPlugin extends React.Component {
                     } else if (layer.type === "wms" && layer.params.LAYERS.split(",").length >= 1) {
                         const paramLayers = layer.params.LAYERS.split(",");
                         const paramOpacities = layer.params.OPACITIES.split(",");
-                        const paramStyles = layer.params.STYLES.split(",");
+                        const paramStyles = (layer.params.STYLES || "").split(",");
                         for (let j = paramLayers.length - 1; j >= 0; --j) {
                             const layerName = paramLayers[j];
                             if (swipeLayerNameBlacklist.find(entry => layerName.match(entry))) {
@@ -199,10 +204,9 @@ class MapPlugin extends React.Component {
                 return null;
             }
             ++zIndex;
-            const options = {...layer, zIndex: layer.zIndex ?? zIndex};
             const swipe = this.props.swipe !== null && layer === this.state.swipeLayer;
             return (
-                <OlLayer key={layer.uuid} options={options} swipe={swipe ? this.props.swipe : null} />
+                <OlLayer key={layer.uuid} options={layer} swipe={swipe ? this.props.swipe : null} zIndex={layer.zIndex ?? zIndex} />
             );
         });
     };
@@ -214,7 +218,7 @@ class MapPlugin extends React.Component {
     };
     render() {
         let loadingIndicator = null;
-        if (this.props.showLoading && this.props.layers.find(layer => layer.loading === true) !== undefined) {
+        if (this.props.showLoading && !isEmpty(this.props.loadingLayers)) {
             loadingIndicator = (
                 <span className="map-loading-indicator" key="map-loading" ref={el => { this.loadingEl = el; }}>
                     <Spinner className="spinner" />
@@ -240,6 +244,7 @@ export default (tools) => {
     return connect((state) => ({
         map: state.map,
         layers: state.layers.flat,
+        loadingLayers: state.layers.loading,
         swipe: state.layers.swipe,
         theme: state.theme.current,
         tools

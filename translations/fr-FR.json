@@ -1,15 +1,23 @@
 {
   "locale": "fr-FR",
   "messages": {
+    "app": {
+      "missingbg": "Impossible de trouver le fond \"{0}\", affichage du fond par défaut.",
+      "missinglayers": "Impossible de trouver les couches suivantes: {0}.",
+      "missingpermalink": "Le permalien ou le signet n'est pas valide ou a expiré.",
+      "missingprojection": "Impossible de charger le thème \"{0}\": la projection {1} n'est pas définie.",
+      "missingtheme": "Impossible de trouver le thème \"{0}\", chargement du thème par défaut."
+    },
     "appmenu": {
       "filter": "Filtrer le menu...",
-      "menulabel": "Cartes et outils",
       "items": {
+        "MapFilter": "Filtrer la carte",
         "AttributeTable": "Table d'attributs",
         "Cyclomedia": "Cyclomedia",
         "DxfExport": "Export DXF",
         "Editing": "Editer",
         "FeatureForm": "Formulaire d'objet",
+        "FeatureSearch": "Recherche objet",
         "Help": "Aide",
         "IdentifyPoint": "Interroger point",
         "IdentifyRegion": "Interroger la région",
@@ -21,8 +29,10 @@
         "Measure": "Mesurer",
         "MeasureLineString": "Mesurer une ligne",
         "MeasurePolygon": "Mesurer un polygone",
+        "Portal": "Portail",
         "Print": "Imprimer",
-        "RasterExport": "Export image",
+        "RasterExport": "Exporter l'image",
+        "MapExport": "Exporter la carte",
         "Redlining": "Dessiner",
         "Routing": "Routage",
         "Share": "Partager",
@@ -31,19 +41,22 @@
         "Bookmark": "Marque-pages",
         "TimeManager": "Ligne du temps",
         "Settings": "Paramètres"
-      }
+      },
+      "menulabel": "Cartes et outils"
     },
     "attribtable": {
       "addfeature": "Ajouter un objet",
       "commit": "Enregistrer les modifications",
+      "csvexport": "Exporter en CSV",
       "delete": "Supprimer",
       "deletefailed": "Un ou plusieurs objets n'ont pas pu être supprimés",
-      "deletefeatures": "Supression des objets sélectionnés",
+      "deletefeatures": "Suppression des objets sélectionnés",
       "deleting": "Suppression en cours...",
       "discard": "Abandonner les modifications",
-      "formeditmode": "Basculter sur la vue formulaire",
+      "formeditmode": "Basculer sur la vue formulaire",
       "geomnoadd": "Veuillez utiliser le formulaire d'édition pour ajouter de nouveaux objets à cette couche",
       "layer": "Couche",
+      "limittoextent": "Dans l'étendue de la carte",
       "loadfailed": "Echec du chargement de l'objet",
       "loading": "Chargement en cours...",
       "nodelete": "Ne pas supprimer",
@@ -80,12 +93,14 @@
     },
     "copybtn": {
       "click_to_copy": "Cliquer pour copier",
-      "copied": "Copié"
+      "copied": "Copié",
+      "copyfailed": "Impossible de copier"
     },
     "cyclomedia": {
       "clickonmap": "Cliquez sur un enregistrement sur la carte",
+      "initializing": "Initialisation de Cyclomedia...",
       "loaderror": "Échec de l'initialisation de Cyclomedia",
-      "loading": "Initialisation de Cyclomedia...",
+      "loading": "Chargement",
       "login": "Connexion",
       "scalehint": "Les enregistrements ne sont visibles que sur la carte sous l'échelle 1 :{0}.",
       "title": "Visualiseur Cyclomedia"
@@ -111,23 +126,28 @@
       "invalidform": "Formulaire non valide",
       "maximize": "Maximiser",
       "minimize": "Minimiser",
-      "nocompatpick": "Aucune géométrie compatible trouvée",
       "noeditablelayers": "Il n'y a pas de couche éditable pour ce thème",
       "paint": "Éditer",
       "pick": "Choisir",
       "pickdrawfeature": "Copier la géométrie existante",
       "reallydelete": "Supprimer",
-      "relationcommitfailed": "Certaines relations n'ont pas pu être enregistrées. Pour plus de détails consulter le boutons d'informations",
+      "relationcommitfailed": "Certaines relations n'ont pas pu être enregistrées. Pour plus de détails consulter le bouton d'informations",
       "select": "Sélectionner",
       "selectedpicture": "Image sélectionnée",
       "takepicture": "Ajouter une photo",
       "unsavedchanged": "Il y a des modifications non enregistrées. Faut-il quand même quitter la page?"
     },
     "featureform": {
-      "feature": "Object",
+      "feature": "Objet",
       "noresults": "Pas de résultats",
       "querying": "Identification en cours...",
       "title": "Formulaire d'objet"
+    },
+    "featuresearch": {
+      "noresults": "Pas de résultats",
+      "query": "Terme",
+      "select": "Sélectionner",
+      "title": "Recherche objet"
     },
     "fileselector": {
       "files": "Fichiers",
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "s/mer",
       "distance": "Distance",
+      "drawnodes": "Dessiner des nœuds",
+      "error": "Échec du calcul du profil de hauteur",
       "export": "Exporter le profil",
       "height": "Altitude",
-      "loading": "Calcul du profil de hauteur..."
+      "loading": "Calcul du profil de hauteur...",
+      "loadingimage": "Chargement de l'image de la carte...",
+      "print": "Imprimer le profil de hauteur",
+      "title": "Profil de hauteur"
     },
     "identify": {
       "clipboard": "Copier dans le presse-papiers",
@@ -164,6 +189,8 @@
       "localfile": "Fichier local",
       "nofeatures": "Aucune entité ne peut être importée.",
       "noresults": "Pas de résultat ou URL non valide",
+      "notgeopdf": "Le fichier sélectionné ne semble pas être un GeoPDF.",
+      "unknownproj": "Le GeoPDF sélectionné utilise une projection inconnue: {0}.",
       "url": "URL",
       "urlplaceholder": "Entrer l'URL d'un WMS, WMTS, WFS..."
     },
@@ -177,7 +204,7 @@
       "windowtitle": "Catalogue de couches"
     },
     "layerinfo": {
-      "abstract": "Récapitulation",
+      "abstract": "Résumé",
       "attribution": "Attribution",
       "dataUrl": "URL des données",
       "keywords": "Mots-clés",
@@ -221,6 +248,22 @@
       "loading": "Chargement de la carte...",
       "resetrotation": "Réinitialiser la rotation"
     },
+    "mapexport": {
+      "configuration": "Configuration",
+      "format": "Format",
+      "resolution": "Résolution",
+      "scale": "Echelle",
+      "size": "Dimension",
+      "submit": "Exporter",
+      "usersize": "Selectionner sur la carte...",
+      "wait": "Veuillez patienter..."
+    },
+    "mapfilter": {
+      "geomfilter": "Géométrique",
+      "timefilter": "Temporelle",
+      "timefrom": "De",
+      "timeto": "A"
+    },
     "mapinfotooltip": {
       "elevation": "Altitude",
       "title": "Position"
@@ -239,6 +282,9 @@
       "metric": "Métrique",
       "pointLabel": "Position"
     },
+    "misc": {
+      "ctrlclickhint": "Ouvrir avec Ctrl+Clic"
+    },
     "navbar": {
       "perpage": "Par page"
     },
@@ -256,10 +302,15 @@
       "width": "Largeur",
       "windowtitle": "Entrée numérique"
     },
+    "portal": {
+      "filter": "Filtrer les thèmes...",
+      "menulabel": "Menu"
+    },
     "print": {
       "atlasfeature": "Objet atlas",
+      "format": "Format",
       "grid": "Grille",
-      "layout": "Format",
+      "layout": "Mise en page",
       "legend": "Légende",
       "maximize": "Maximiser",
       "minimize": "Minimiser",
@@ -270,7 +321,7 @@
       "resolution": "Résolution",
       "rotation": "Rotation",
       "scale": "Echelle",
-      "submit": "Créer le PDF",
+      "submit": "Imprimer",
       "wait": "Veuillez patienter..."
     },
     "qtdesignerform": {
@@ -302,6 +353,7 @@
       "label": "Texte",
       "layer": "Couche",
       "line": "Ligne",
+      "markers": "Pointes",
       "measurements": "Montrer les mesures",
       "numericinput": "Entrée numérique",
       "pick": "Choisir",
@@ -340,7 +392,7 @@
       "method": "Méthode",
       "mode_auto": "Automobile",
       "mode_bicycle": "Bicyclette",
-      "mode_heavyvehicle": "Véhicule pesant",
+      "mode_heavyvehicle": "Véhicule lourd",
       "mode_transit": "Transit",
       "mode_walking": "Marcher",
       "optimized_route": "Route optimale",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Tous",
+      "circleradius": "Rayon du cercle",
+      "clearfilter": "Effacer",
       "enablelayer": "Activer la couche",
       "existinglayer": "La couche existe déjà dans la carte",
-      "invisiblelayer": "Le résultat est sur une couche désactivé",
+      "filter": "Filtre",
+      "invisiblelayer": "Le résultat est sur une couche désactivée",
+      "limittoarea": "Limiter à la région",
       "more": "Plus...",
+      "none": "Aucune",
       "noresults": "Pas de résultats",
       "providerselection": "Services de recherche",
       "search": "Chercher",
       "searchall": "Rechercher un lieu ou ajouter une carte...",
       "searchinprogress": "Recherche en cours",
       "searchreset": "Réinitialiser la recherche",
+      "solr": "Recherche en plein texte",
+      "themelayers": "Couches de thèmes",
       "themes": "Cartes"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Information sur le thème"
     },
     "settings": {
+      "bookmarks": "Marque-pages",
       "colorscheme": "Schéma de couleurs",
       "confirmlang": "L'application sera rechargée pour changer la langue. Procéder?",
+      "default": "Par défaut",
+      "defaulttheme": "Thème par défaut",
+      "defaultthemefailed": "Impossible de modifier le thème par défaut : {0}",
       "language": "Langue",
-      "systemlang": "Langue du système"
+      "systemlang": "Langue du système",
+      "themes": "Thèmes"
     },
     "share": {
       "QRCodeLinkTitle": "QR code",
       "directLinkTitle": "Via un lien direct",
+      "expires": "Ce lien permanent est valide jusqu'au {0}.",
       "refresh": "Générer un lien permanent",
       "shareTitle": "QWC2",
       "showpin": "Afficher les épingles",
       "socialIntro": "Via votre réseau social favori"
     },
     "snapping": {
+      "edge": "Snapping aux bords",
       "loading": "Chargement",
-      "snappingenabled": "Snapping activé"
+      "snappingenabled": "Snapping activé",
+      "vertex": "Snapping aux sommets"
     },
     "themelayerslist": {
       "addlayer": "Ajouter la couche",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Ajouter des couches à la carte",
       "addtotheme": "Ajouter au thème actuel",
+      "changedefaulttheme": "Sélectionner ce thème comme thème par défaut",
       "confirmswitch": "Les couches ajoutées par vos soins seront perdues en changeant de thème. Voulez-vous continuer ?",
       "filter": "Filtre...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "Chronologie avec objets",
       "displaylayers": "Chronologie avec couches",
       "displayminimal": "Chronologie uniquement",
+      "edit": "Modifier",
       "endtime": "Fin",
+      "filterwarning": "Filtres sont actifs sur la carte",
       "future": "Future",
       "group": "Attribut de regroupement",
       "groupnone": "Aucun",
@@ -452,13 +522,13 @@
       "starttime": "Début",
       "stepback": "Pas en arrière",
       "stepfwd": "Pas en avant",
-      "stepsize": "aille de pas",
+      "stepsize": "Taille de pas",
       "stop": "Stop",
       "timeline": "Chronologie",
       "timeline_fixed": "Fixe",
-      "timeline_infinite": "Infinite",
+      "timeline_infinite": "Infinie",
       "timelinedisplay": "Affichage",
-      "timelinescale": "Èchelle de temps (non-linéarité)",
+      "timelinescale": "Échelle de temps (non-linéarité)",
       "title": "Ligne du temps",
       "toggle": "Activer le contrôle du temps",
       "unit": {

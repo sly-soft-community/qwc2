@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -204,6 +204,10 @@ function getLayerTree(layer, resultLayers, visibleLayers, printLayers, level, co
             });
             layerEntry.keywords = keywords.join(", ");
         }
+        if (layer.Style) {
+            layerEntry.styles = toArray(layer.Style).reduce((res, entry) => ({...res, [entry.Name]: entry.Title}), {});
+            layerEntry.style = layerEntry.styles.default ? 'default' : (Object.keys(layerEntry)[0] ?? '');
+        }
         if (layer.MinScaleDenominator !== undefined) {
             layerEntry.minScale = Math.round(parseFloat(layer.MinScaleDenominator));
             layerEntry.maxScale = Math.round(parseFloat(layer.MaxScaleDenominator));
@@ -331,7 +335,7 @@ function getTheme(config, configItem, result, resultItem, proxy) {
             }
 
             // collect WMS layers for printing
-            let printLayers = [];
+            let printLayers = configItem.extraPrintLayers || [];
             if (configItem.backgroundLayers !== undefined) {
                 printLayers = configItem.backgroundLayers.reduce((printLyrs, entry) => {
                     if (entry.printLayer) {
@@ -388,6 +392,7 @@ function getTheme(config, configItem, result, resultItem, proxy) {
                             return entry.$.name;
                         }).filter(label => !(configItem.printLabelBlacklist || []).includes(label));
                     }
+                    printTemplate.default = configItem.defaultPrintLayout === printTemplate.name;
                     if (composerTemplate.$.atlasEnabled === '1') {
                         const atlasLayer = composerTemplate.$.atlasCoverageLayer;
                         try {
@@ -431,6 +436,7 @@ function getTheme(config, configItem, result, resultItem, proxy) {
             resultItem.format = configItem.format;
             resultItem.availableFormats = capabilities.Capability.Request.GetMap.Format;
             resultItem.tiled = configItem.tiled;
+            resultItem.tileSize = configItem.tileSize;
             resultItem.version = configItem.version ? configItem.version : config.defaultWMSVersion;
             resultItem.infoFormats = capabilities.Capability.Request.GetFeatureInfo.Format;
             // use geographic bounding box for theme, as default CRS may have inverted axis order with WMS 1.3.0
@@ -504,6 +510,9 @@ function getTheme(config, configItem, result, resultItem, proxy) {
             if (configItem.pluginData) {
                 resultItem.pluginData = configItem.pluginData;
             }
+            if (configItem.predefinedFilters) {
+                resultItem.predefinedFilters = configItem.predefinedFilters;
+            }
             if (configItem.snapping) {
                 resultItem.snapping = configItem.snapping;
             }
@@ -518,6 +527,7 @@ function getTheme(config, configItem, result, resultItem, proxy) {
 
             resultItem.skipEmptyFeatureAttributes = configItem.skipEmptyFeatureAttributes;
             resultItem.config = configItem.config;
+            resultItem.flags = configItem.flags;
             resultItem.mapTips = configItem.mapTips;
             resultItem.userMap = configItem.userMap;
             resultItem.editConfig = getEditConfig(configItem.editConfig);

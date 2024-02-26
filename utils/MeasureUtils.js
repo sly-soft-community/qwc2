@@ -1,6 +1,6 @@
 /**
  * Copyright 2016 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -137,6 +137,33 @@ const MeasureUtils = {
             result += ' ' + unit;
         }
         return result;
+    },
+    convertLength(length, fromUnit, toUnit) {
+        let lengthMeters = length;
+        switch (fromUnit) {
+        case 'm':
+            lengthMeters = length; break;
+        case 'ft':
+            lengthMeters = length * 0.3048; break;
+        case 'km':
+            lengthMeters = length * 1000; break;
+        case 'mi':
+            lengthMeters = length * 1609.34; break;
+        default:
+            lengthMeters = length; break;
+        }
+        switch (toUnit) {
+        case 'm':
+            return lengthMeters;
+        case 'ft':
+            return lengthMeters * 3.28084;
+        case 'km':
+            return lengthMeters * 0.001;
+        case 'mi':
+            return lengthMeters * 0.000621371;
+        default:
+            return lengthMeters;
+        }
     },
     getFormattedArea(unit, area, decimals = 2, withUnit = true) {
         let result = '';

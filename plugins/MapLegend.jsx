@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -11,6 +11,7 @@ import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
 import {setCurrentTask} from '../actions/task';
 import ResizeableWindow from '../components/ResizeableWindow';
+import {Image} from '../components/widgets/Primitives';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
@@ -21,6 +22,8 @@ import isEmpty from 'lodash.isempty';
  * Displays the map legend in a floating dialog.
  *
  * The user can toggle whether to display only layers which are enabled, visible in the current extent and/or visible at the current scale.
+ *
+ * See https://docs.qgis.org/3.28/en/docs/server_manual/services/wms.html#wms-getlegendgraphic for supported extra legend params.
  */
 class MapLegend extends React.Component {
     static propTypes = {
@@ -33,21 +36,22 @@ class MapLegend extends React.Component {
         bboxDependentLegend: PropTypes.bool,
         /** Extra parameters to add to the GetLegendGraphics request. */
         extraLegendParameters: PropTypes.string,
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
+        geometry: PropTypes.shape({
+            initialWidth: PropTypes.number,
+            initialHeight: PropTypes.number,
+            initialX: PropTypes.number,
+            initialY: PropTypes.number,
+            initiallyDocked: PropTypes.bool,
+            side: PropTypes.string
+        }),
         layers: PropTypes.array,
         map: PropTypes.object,
         /** Whether to only include enabled layers in the legend by default. */
         onlyVisibleLegend: PropTypes.bool,
         /** Whether to display a scale-dependent legend by default. */
         scaleDependentLegend: PropTypes.bool,
-        setCurrentTask: PropTypes.func,
-        /** Default window geometry with size, position and docking status. */
-        geometry: PropTypes.shape({
-            initialWidth: PropTypes.number,
-            initialHeight: PropTypes.number,
-            initialX: PropTypes.number,
-            initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
-        }),
+        setCurrentTask: PropTypes.func
     };
     static defaultProps = {
         addGroupTitles: false,
@@ -60,7 +64,8 @@ class MapLegend extends React.Component {
             initialHeight: 320,
             initialX: 0,
             initialY: 0,
-            initiallyDocked: false
+            initiallyDocked: false,
+            side: 'left'
         }
     };
     state = {
@@ -94,9 +99,12 @@ class MapLegend extends React.Component {
         ];
 
         return (
-            <ResizeableWindow extraControls={extraControls} icon="list-alt" initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+            <ResizeableWindow dockable={this.props.geometry.side} extraControls={extraControls} icon="list-alt"
+                initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
                 initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
-                initiallyDocked={this.props.geometry.initiallyDocked} onClose={this.onClose} title={LocaleUtils.trmsg("maplegend.windowtitle")} >
+                initiallyDocked={this.props.geometry.initiallyDocked}
+                onClose={this.onClose} title={LocaleUtils.trmsg("maplegend.windowtitle")}
+            >
                 <div className="map-legend" role="body">
                     {this.props.layers.map(layer => {
                         if (this.state.onlyVisibleLegend && !layer.visibility) {
@@ -122,9 +130,10 @@ class MapLegend extends React.Component {
         this.setState({visible: false});
     };
     printLayerLegend = (layer, sublayer, mapScale) => {
-        if (sublayer.sublayers && (!this.state.onlyVisibleLegend || sublayer.visibility)) {
+        const isCategorized = (sublayer.sublayers || []).find(entry => entry.category_sublayer === true);
+        if (sublayer.sublayers && !isCategorized && (!this.state.onlyVisibleLegend || sublayer.visibility)) {
             if (this.props.addGroupTitles) {
-                const children = sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer)).filter(x => x);
+                const children = sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer, mapScale)).filter(x => x);
                 if (isEmpty(children)) {
                     return null;
                 } else {
@@ -132,24 +141,27 @@ class MapLegend extends React.Component {
                         <div className="map-legend-group" key={sublayer.name}>
                             <div className="map-legend-group-title">{sublayer.title || sublayer.name}</div>
                             <div className="map-legend-group-entries">
-                                {sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer))}
+                                {sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer, mapScale))}
                             </div>
                         </div>
                     );
                 }
             } else {
-                return sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer));
+                return sublayer.sublayers.map(subsublayer => this.printLayerLegend(layer, subsublayer, mapScale));
             }
         } else {
             if (this.state.onlyVisibleLegend && !sublayer.visibility) {
+                return null;
+            }
+            if ((this.state.onlyVisibleLegend || this.state.scaleDependentLegend) && !LayerUtils.layerScaleInRange(sublayer, mapScale)) {
                 return null;
             }
             const request = LayerUtils.getLegendUrl(layer, {name: sublayer.name}, mapScale, this.props.map, this.state.bboxDependentLegend, this.state.scaleDependentLegend, this.props.extraLegendParameters);
             return request ? (
                 <div className="map-legend-legend-entry" key={sublayer.name}>
                     <div>
-                        {this.props.addLayerTitles ? (<div className="map-legend-entry-title">{sublayer.title || sublayer.name}</div>) : null}
-                        <div><img src={request} /></div>
+                        {this.props.addLayerTitles && !sublayer.category_sublayer ? (<div className="map-legend-entry-title">{sublayer.title || sublayer.name}</div>) : null}
+                        <div><Image src={request} /></div>
                     </div>
                 </div>) : null;
         }

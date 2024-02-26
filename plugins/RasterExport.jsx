@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2023 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -32,6 +32,8 @@ import './style/RasterExport.css';
 
 /**
  * Allows exporting a selected portion of the map to an image ("screenshot").
+ *
+ * Deprecated. Use the MapExport plugin instead.
  */
 class RasterExport extends React.Component {
     static propTypes = {
@@ -73,6 +75,9 @@ class RasterExport extends React.Component {
         super(props);
         this.form = null;
         this.state.dpi = props.dpis[0] || 96;
+
+        /* eslint-disable-next-line */
+        console.warn("The RasterExport plugin is deprecated. Use the MapExport plugin instead.");
     }
     state = {
         extent: '',
@@ -150,12 +155,11 @@ class RasterExport extends React.Component {
         const action = this.props.theme.url;
         const exportExternalLayers = this.props.exportExternalLayers && ConfigUtils.getConfigProp("qgisServerVersion") >= 3;
 
-        const mapScale = this.state.pageSize !== null ? this.state.scale : MapUtils.computeForZoom(this.props.map.scales, this.props.map.zoom);
-        const exportParams = LayerUtils.collectPrintParams(this.props.layers, this.props.theme, mapScale, this.props.map.projection, exportExternalLayers);
+        const exportParams = LayerUtils.collectPrintParams(this.props.layers, this.props.theme, this.state.scale, this.props.map.projection, exportExternalLayers);
 
         // Local vector layer features
         const mapCrs = this.props.map.projection;
-        const highlightParams = VectorLayerUtils.createPrintHighlighParams(this.props.layers, mapCrs, this.state.dpi);
+        const highlightParams = VectorLayerUtils.createPrintHighlighParams(this.props.layers, mapCrs, this.state.scale, this.state.dpi);
         const dimensionValues = this.props.layers.reduce((res, layer) => {
             if (layer.role === LayerRole.THEME) {
                 Object.entries(layer.dimensionValues || {}).forEach(([key, value]) => {
@@ -246,6 +250,7 @@ class RasterExport extends React.Component {
                     <input name="HIGHLIGHT_LABELBUFFERCOLOR" readOnly type="hidden" value={highlightParams.labelOultineColors.join(";")} />
                     <input name="HIGHLIGHT_LABELBUFFERSIZE" readOnly type="hidden" value={highlightParams.labelOutlineSizes.join(";")} />
                     <input name="HIGHLIGHT_LABELSIZE" readOnly type="hidden" value={highlightParams.labelSizes.join(";")} />
+                    <input name="HIGHLIGHT_LABEL_DISTANCE" readOnly type="hidden" value={highlightParams.labelDist.join(";")} />
                     {Object.entries(dimensionValues).map(([key, value]) => (
                         <input key={key} name={key} readOnly type="hidden" value={value} />
                     ))}
@@ -270,7 +275,7 @@ class RasterExport extends React.Component {
             };
             return (<PrintFrame fixedFrame={frame} key="PrintFrame" map={this.props.map} />);
         } else {
-            return (<PrintFrame bboxSelected={this.bboxSelected} key="PrintFrame" map={this.props.map} />);
+            return (<PrintFrame bboxSelected={this.bboxSelected} dpi={this.state.dpi} key="PrintFrame" map={this.props.map} />);
         }
     };
     render() {

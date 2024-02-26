@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -11,10 +11,9 @@ import PropTypes from 'prop-types';
 import classnames from 'classnames';
 import {connect} from 'react-redux';
 import {toggleFullscreen} from '../actions/display';
-import {openExternalUrl} from '../actions/task';
 import {setTopbarHeight} from '../actions/map';
+import {openExternalUrl} from '../actions/task';
 import {restoreDefaultTheme} from '../actions/theme';
-import {showIframeDialog} from '../actions/windows';
 import Icon from '../components/Icon';
 import {Swipeable} from '../components/Swipeable';
 import ConfigUtils from '../utils/ConfigUtils';
@@ -48,10 +47,41 @@ class TopBar extends React.Component {
         mobile: PropTypes.bool,
         openExternalUrl: PropTypes.func,
         restoreDefaultTheme: PropTypes.func,
-        /** Options passed down to the search component. See the searchOption propType of the used search component. */
-        searchOptions: PropTypes.object,
+        /** Options passed down to the search component. */
+        searchOptions: PropTypes.shape({
+            /** Whether to show the search filter widget (SearchBox only). */
+            allowSearchFilters: PropTypes.bool,
+            /** Whether to hide the result labels on the map. */
+            hideResultLabels: PropTypes.bool,
+            /** The style used for highlighting search result geometries. */
+            highlightStyle: PropTypes.shape({
+                /* Stroke color rgba array, i.e. [255, 0, 0, 0.5] */
+                strokeColor: PropTypes.array,
+                /* Stroke width */
+                strokeWidth: PropTypes.number,
+                /* Stroke dash/gap pattern array. Empty for solid line. */
+                strokeDash: PropTypes.array,
+                /* Fill color rgba array, i.e. [255, 0, 0, 0.33] */
+                fillColor: PropTypes.array
+            }),
+            /** Minimum scale denominator when zooming to search result. */
+            minScaleDenom: PropTypes.number,
+            /** Maximum number of results the fulltext search should return (SearchBox only). */
+            resultLimit: PropTypes.number,
+            /** Whether to collapse search sections by default (SearchBox only). */
+            sectionsDefaultCollapsed: PropTypes.bool,
+            /** Whether to show the layer tree after selectinga theme result. */
+            showLayerAfterChangeTheme: PropTypes.bool,
+            /** Whether to show provider selection menu (Search only). */
+            showProviderSelection: PropTypes.bool,
+            /** Whether to list the names of active providers as search field placeholder (Search only). */
+            showProvidersInPlaceholder: PropTypes.bool,
+            /** Whether to show the 'All providers' entry in the provider selection menu (Search only). */
+            providerSelectionAllowAll: PropTypes.bool,
+            /** Whether to zoom to layer search results. */
+            zoomToLayers: PropTypes.bool
+        }),
         setTopbarHeight: PropTypes.func,
-        showIframeDialog: PropTypes.func,
         toggleFullscreen: PropTypes.func,
         /** The toolbar. Refer to the corresponding chapter of the viewer documentation and the sample config.json. */
         toolbarItems: PropTypes.array,
@@ -134,10 +164,9 @@ class TopBar extends React.Component {
     }
     openUrl = (url, target, title, icon) => {
         if (target === "iframe") {
-            this.props.showIframeDialog("externallinkiframe", url, {title: title, icon: icon});
-        } else {
-            this.props.openExternalUrl(url);
+            target = ":iframedialog:externallinkiframe";
         }
+        this.props.openExternalUrl(url, target, {title, icon});
     };
     storeHeight = (el) => {
         if (el) {
@@ -155,7 +184,6 @@ export default (components) => {
         toggleFullscreen: toggleFullscreen,
         restoreDefaultTheme: restoreDefaultTheme,
         openExternalUrl: openExternalUrl,
-        setTopbarHeight: setTopbarHeight,
-        showIframeDialog: showIframeDialog
+        setTopbarHeight: setTopbarHeight
     })(TopBar);
 };

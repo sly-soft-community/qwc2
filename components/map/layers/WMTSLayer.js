@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,7 +9,6 @@
 
 import ol from 'openlayers';
 import CoordinatesUtils from '../../../utils/CoordinatesUtils';
-import MapUtils from '../../../utils/MapUtils';
 
 function getWMSURLs(urls) {
     return urls.map((url) => url.split("?")[0]);
@@ -48,16 +47,18 @@ function createWMTSSource(options) {
         }),
         style: options.style !== undefined ? options.style : '',
         wrapX: options.wrapX !== undefined ? options.wrapX : true,
-        requestEncoding: options.requestEncoding !== undefined ? options.requestEncoding : "REST"
+        requestEncoding: options.requestEncoding !== undefined ? options.requestEncoding : "REST",
+        ...(options.sourceConfig || {})
     });
 }
 
 export default {
     create: (options) => {
         return new ol.layer.Tile({
-            minResolution: typeof options.minScale === 'number' ? MapUtils.getResolutionsForScales([options.minScale], options.projection)[0] : undefined,
-            maxResolution: typeof options.maxScale === 'number' ? MapUtils.getResolutionsForScales([options.maxScale], options.projection)[0] : undefined,
-            source: createWMTSSource(options)
+            minResolution: options.minResolution,
+            maxResolution: options.maxResolution,
+            source: createWMTSSource(options),
+            ...(options.layerConfig || {})
         });
     },
     update: (layer, newOptions, oldOptions) => {

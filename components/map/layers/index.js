@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -10,10 +10,10 @@
 import bingLayer from './BingLayer';
 import googleLayer from './GoogleLayer';
 import graticuleLayer from './GraticuleLayer';
+import imageLayer from './ImageLayer';
 import mvtLayer from './MVTLayer';
 import osmLayer from './OSMLayer';
 import overlayLayer from './OverlayLayer';
-import tileproviderLayer from './TileProviderLayer';
 import vectorLayer from './VectorLayer';
 import wmsLayer from './WMSLayer';
 import wmtsLayer from './WMTSLayer';
@@ -24,10 +24,10 @@ export default {
     bing: bingLayer,
     google: googleLayer,
     graticule: graticuleLayer,
+    image: imageLayer,
     mvt: mvtLayer,
     osm: osmLayer,
     overlay: overlayLayer,
-    tileprovider: tileproviderLayer,
     vector: vectorLayer,
     wms: wmsLayer,
     wmts: wmtsLayer,

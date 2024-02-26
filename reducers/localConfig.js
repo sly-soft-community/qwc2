@@ -1,13 +1,13 @@
 /**
  * Copyright 2016 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import {LOCAL_CONFIG_LOADED, SET_STARTUP_PARAMETERS, SET_COLOR_SCHEME} from '../actions/localConfig';
+import {LOCAL_CONFIG_LOADED, SET_STARTUP_PARAMETERS, SET_COLOR_SCHEME, SET_USER_INFO_FIELDS, SET_PERMALINK_PARAMETERS} from '../actions/localConfig';
 
 import ConfigUtils from '../utils/ConfigUtils';
 import {UrlParams} from '../utils/PermaLinkUtils';
@@ -15,6 +15,7 @@ import {UrlParams} from '../utils/PermaLinkUtils';
 const defaultState = {
     ...ConfigUtils.getDefaults(),
     startupParams: {},
+    permalinkParams: {},
     colorScheme: 'default'
 };
 
@@ -42,6 +43,26 @@ export default function localConfig(state = defaultState, action) {
             localStorage.setItem('qwc2-color-scheme', newColorScheme);
         }
         return {...state, colorScheme: newColorScheme};
+    }
+    case SET_USER_INFO_FIELDS: {
+        return {
+            ...state,
+            user_infos: {
+                ...state.user_infos,
+                ...action.fields
+            }
+        };
+    }
+    case SET_PERMALINK_PARAMETERS: {
+        return {
+            ...state,
+            permalinkParams: Object.entries({...state.permalinkParams, ...action.params}).reduce((res, [key, value]) => {
+                if (value !== undefined) {
+                    res[key] = value;
+                }
+                return res;
+            }, {})
+        };
     }
     default:
         return state;

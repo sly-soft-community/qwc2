@@ -1,15 +1,23 @@
 {
   "locale": "de-CH",
   "messages": {
+    "app": {
+      "missingbg": "Der Hintergrund \"{0}\" konnte nicht gefunden werden, der Standardhintergrund wird angezeigt.",
+      "missinglayers": "Die folgenden Ebenen können nicht gefunden werden: {0}.",
+      "missingpermalink": "Der Permalink oder das Lesezeichen ist ungültig oder abgelaufen.",
+      "missingprojection": "Das Thema \"{0}\" konnte nicht geladen werden: die Projektion {1} ist nicht definiert.",
+      "missingtheme": "Das Thema \"{0}\" konnte nicht gefunden werden, das Standardthema wurde geladen."
+    },
     "appmenu": {
       "filter": "Menü filtern...",
-      "menulabel": "Karte & Werkzeuge",
       "items": {
+        "MapFilter": "Kartenfilter",
         "AttributeTable": "Attributtabelle",
         "Cyclomedia": "Cyclomedia",
         "DxfExport": "DXF-Export",
         "Editing": "Editieren",
         "FeatureForm": "Objektformular",
+        "FeatureSearch": "Objektsuche",
         "Help": "Hilfe",
         "IdentifyPoint": "Punkt abfragen",
         "IdentifyRegion": "Region abfragen",
@@ -21,8 +29,10 @@
         "Measure": "Messen",
         "MeasureLineString": "Messen Linie",
         "MeasurePolygon": "Messen Polygon",
+        "Portal": "Portal",
         "Print": "Drucken",
         "RasterExport": "Raster-Export",
+        "MapExport": "Karte exportieren",
         "Redlining": "Zeichnen",
         "Routing": "Routing",
         "Share": "Teilen",
@@ -31,11 +41,13 @@
         "Bookmark": "Lesezeichen",
         "TimeManager": "Zeitleiste",
         "Settings": "Einstellungen"
-      }
+      },
+      "menulabel": "Karte & Werkzeuge"
     },
     "attribtable": {
       "addfeature": "Objekt hinzufügen",
       "commit": "Geänderte Zeile speichern",
+      "csvexport": "CSV Export",
       "delete": "Löschen",
       "deletefailed": "Ein oder mehrere Objekte konnten nicht gelöscht werden",
       "deletefeatures": "Ausgewählte Objekte löschen",
@@ -44,6 +56,7 @@
       "formeditmode": "Ausgewähltes Objekt in der Formularansicht editieren",
       "geomnoadd": "Bitte die Formularansicht verwenden, um neue Objekte für diese Ebene zu erstellen",
       "layer": "Ebene",
+      "limittoextent": "In Kartenausschnitt",
       "loadfailed": "Die Objektdaten konnten nicht geladen werden",
       "loading": "Laden...",
       "nodelete": "Nicht löschen",
@@ -80,12 +93,14 @@
     },
     "copybtn": {
       "click_to_copy": "In Zwischenablage kopieren",
-      "copied": "Kopiert"
+      "copied": "Kopiert",
+      "copyfailed": "Kopieren fehlgeschlagen"
     },
     "cyclomedia": {
       "clickonmap": "Wähle eine Aufnahme in der Karte aus",
+      "initializing": "Cyclomedia wird initialisiert...",
       "loaderror": "Fehler beim Initialisieren von Cyclomedia",
-      "loading": "Cyclomedia wird initialisiert...",
+      "loading": "Ansicht wird geladen...",
       "login": "Anmelden",
       "scalehint": "Die Aufnahmen sind nur ab Massstab 1:{0} auf der Karte sichtbar.",
       "title": "Cyclomedia Viewer"
@@ -108,10 +123,9 @@
       "draw": "Zeichnen",
       "feature": "Objekt",
       "geomreadonly": "Die Geometrie enthält Z-Werte ungleich Null und kann daher nicht veränderbar.",
-      "invalidform": "Formular umgültig",
+      "invalidform": "Formular ungültig",
       "maximize": "Maximieren",
       "minimize": "Minimieren",
-      "nocompatpick": "Keine kompatible Geometrie",
       "noeditablelayers": "Keine editierbare Ebenen.",
       "paint": "Bearb.",
       "pick": "Auswählen",
@@ -129,16 +143,27 @@
       "querying": "Objekte werden abgefragt...",
       "title": "Objektformular"
     },
+    "featuresearch": {
+      "noresults": "Keine Ergebnisse",
+      "query": "Begriff",
+      "select": "Auswählen...",
+      "title": "Objektsuche"
+    },
     "fileselector": {
       "files": "Dateien",
       "placeholder": "Datei auswählen"
     },
     "heightprofile": {
-      "asl": "ü.M.",
+      "asl": "ü. NHN",
       "distance": "Distanz",
+      "drawnodes": "Knoten zeichnen",
+      "error": "Fehler beim Berechnen des Höhenprofils",
       "export": "Exportieren",
       "height": "Höhe",
-      "loading": "Höhenprofil wird berechnet..."
+      "loading": "Höhenprofil wird berechnet...",
+      "loadingimage": "Kartenbild wird geladen...",
+      "print": "Höhenprofil drucken",
+      "title": "Höhenprofil"
     },
     "identify": {
       "clipboard": "Nach Zwischenablage kopieren",
@@ -164,13 +189,15 @@
       "localfile": "Lokale Datei",
       "nofeatures": "Keine Objekte konnten importiert werden",
       "noresults": "Keine Resultate oder ungültige URL",
+      "notgeopdf": "Die ausgewählte Datei scheint kein GeoPDF zu sein.",
+      "unknownproj": "Das ausgewählte GeoPDF verwendet eine unbekannte Projektion: {0}.",
       "url": "URL",
       "urlplaceholder": "WMS, WMTS oder WFS URL eingeben..."
     },
     "infotool": {
       "clickhelpPoint": "Zu identifizierende Position in der Karte auswählen...",
       "clickhelpPolygon": "Polygon um die zu identifizierende Objekte zeichnen",
-      "clickhelpRadius": "Einen Radius setzten und in die Karte clicken um Objekte um den Punkt zu identifizieren...",
+      "clickhelpRadius": "Einen Radius setzten und in die Karte klicken, um Objekte um den Punkt zu identifizieren...",
       "radius": "Radius"
     },
     "layercatalog": {
@@ -221,6 +248,22 @@
       "loading": "Karte wird geladen...",
       "resetrotation": "Drehung zurücksetzen"
     },
+    "mapexport": {
+      "configuration": "Konfiguration",
+      "format": "Format",
+      "resolution": "Auflösung",
+      "scale": "Massstab",
+      "size": "Dimensionen",
+      "submit": "Exportieren",
+      "usersize": "Auf Karte auswählen...",
+      "wait": "Bitte warten..."
+    },
+    "mapfilter": {
+      "geomfilter": "Geometrie",
+      "timefilter": "Zeit",
+      "timefrom": "Von",
+      "timeto": "Bis"
+    },
     "mapinfotooltip": {
       "elevation": "Höhe",
       "title": "Position"
@@ -239,6 +282,9 @@
       "metric": "Metrisch",
       "pointLabel": "Position"
     },
+    "misc": {
+      "ctrlclickhint": "Öffne mit Ctrl+Click"
+    },
     "navbar": {
       "perpage": "pro Seite"
     },
@@ -256,8 +302,13 @@
       "width": "Breite",
       "windowtitle": "Numerische Eingabe"
     },
+    "portal": {
+      "filter": "Themen filtern...",
+      "menulabel": "Menu"
+    },
     "print": {
       "atlasfeature": "Atlasobjekt",
+      "format": "Format",
       "grid": "Gitter",
       "layout": "Format",
       "legend": "Legende",
@@ -270,7 +321,7 @@
       "resolution": "Auflösung",
       "rotation": "Rotation",
       "scale": "Massstab",
-      "submit": "PDF erzeugen",
+      "submit": "Erzeugen",
       "wait": "Bitte warten..."
     },
     "qtdesignerform": {
@@ -302,6 +353,7 @@
       "label": "Beschriftung",
       "layer": "Ebene",
       "line": "Linie",
+      "markers": "Spitzen",
       "measurements": "Messungen anzeigen",
       "numericinput": "Numerische Eingabe",
       "pick": "Auswählen",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Alle",
+      "circleradius": "Kreis radius",
+      "clearfilter": "Zurücksetzen",
       "enablelayer": "Ebene einschalten",
       "existinglayer": "Die Ebene existiert bereits in der Karte",
+      "filter": "Filter",
       "invisiblelayer": "Das Resultat liegt auf einer Ebene, die ausgeschaltet ist.",
+      "limittoarea": "Auf Fläche begrenzen",
       "more": "Mehr...",
+      "none": "Keine",
       "noresults": "Keine Ergebnisse",
       "providerselection": "Suchdienste",
       "search": "Suchen",
       "searchall": "Ort suchen oder Karte hinzufügen...",
       "searchinprogress": "Suche läuft",
       "searchreset": "Suche zurücksetzen",
+      "solr": "Volltextsuche",
+      "themelayers": "Themenebenen",
       "themes": "Themen"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Informationen zum Thema"
     },
     "settings": {
+      "bookmarks": "Lesezeichen",
       "colorscheme": "Farbschema",
       "confirmlang": "Die Anwendung wird neugeladen, um die Sprache zu wechseln. Fortsetzen?",
+      "default": "Standard",
+      "defaulttheme": "Standardthema",
+      "defaultthemefailed": "Konnte das Standardthema nicht ändern: {0}",
       "language": "Sprache",
-      "systemlang": "Systemsprache"
+      "systemlang": "Systemsprache",
+      "themes": "Themen"
     },
     "share": {
       "QRCodeLinkTitle": "QR Code (Smartphone)",
       "directLinkTitle": "Über einen direkten Link",
+      "expires": "Dieser Permalink ist bis am {0} gültig.",
       "refresh": "Permalink generieren",
       "shareTitle": "QWC2",
       "showpin": "Pin anzeigen",
       "socialIntro": "In den sozialen Medien"
     },
     "snapping": {
+      "edge": "An Kanten einrasten",
       "loading": "Einrastungsgeometrien werden geladen...",
-      "snappingenabled": "Einrasten"
+      "snappingenabled": "Einrasten",
+      "vertex": "An Ecken einrasten"
     },
     "themelayerslist": {
       "addlayer": "Layer hinzufügen",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Ebenen der Karte hinzufügen",
       "addtotheme": "Dem aktuellen Thema hinzufügen",
+      "changedefaulttheme": "Als Standardthema setzen",
       "confirmswitch": "Ebenen, die nicht Teil des Themas sind, werden entfernt. Fortsetzen?",
       "filter": "Filter",
       "match": {
@@ -435,11 +503,13 @@
       "displayfeatures": "Zeitleiste und Objekte",
       "displaylayers": "Zeitleiste und Ebenen",
       "displayminimal": "Nur Zeitleiste",
+      "edit": "Anpassen",
       "endtime": "Ende",
+      "filterwarning": "Kartenfilter sind aktiv",
       "future": "Zukunft",
       "group": "Gruppierungsattribut",
       "groupnone": "Keins",
-      "home": "Zeitleiste zurücksetzten",
+      "home": "Zeitleiste Zurücksetzen",
       "loading": "Laden...",
       "loop": "Schleife",
       "markers": "Marker",
@@ -448,7 +518,7 @@
       "past": "Vergangenheit",
       "play": "Abspielen",
       "playrev": "Zurück abspielen",
-      "rewind": "Zurücksetzten",
+      "rewind": "Zurücksetzen",
       "starttime": "Beginn",
       "stepback": "Schritt zurück",
       "stepfwd": "Schritt vorwärts",

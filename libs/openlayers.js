@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -51,6 +51,7 @@ import OlInteractionSelect from 'ol/interaction/Select';
 import OlInteractionSnap from 'ol/interaction/Snap';
 import OlInteractionTransform from 'ol-ext/interaction/Transform';
 import OlInteractionTranslate from 'ol/interaction/Translate';
+import OlKinetic from 'ol/Kinetic';
 import OlLayer from 'ol/layer/Layer';
 import OlLayerImage from 'ol/layer/Image';
 import OlLayerTile from 'ol/layer/Tile';
@@ -63,6 +64,7 @@ import OlObject from 'ol/Object';
 import OlOverlay from 'ol/Overlay';
 import * as OlProj from 'ol/proj';
 import OlSourceBingMaps from 'ol/source/BingMaps';
+import OlSourceImageStatic from 'ol/source/ImageStatic';
 import OlSourceImageWMS from 'ol/source/ImageWMS';
 import OlSourceOSM from 'ol/source/OSM';
 import OlSourceTileWMS from 'ol/source/TileWMS';
@@ -140,6 +142,7 @@ export default {
         Transform: OlInteractionTransform,
         Translate: OlInteractionTranslate
     },
+    Kinetic: OlKinetic,
     layer: {
         Layer: OlLayer,
         Image: OlLayerImage,
@@ -155,6 +158,7 @@ export default {
     proj: OlProj,
     source: {
         BingMaps: OlSourceBingMaps,
+        ImageStatic: OlSourceImageStatic,
         ImageWMS: OlSourceImageWMS,
         OSM: OlSourceOSM,
         TileWMS: OlSourceTileWMS,

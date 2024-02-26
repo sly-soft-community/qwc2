@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -18,7 +18,7 @@ import Icon from './Icon';
 import Spinner from './Spinner';
 import MessageBar from './MessageBar';
 import {LayerRole, addLayerFeatures, removeLayer, addLayer, addThemeSublayer, changeLayerProperty} from '../actions/layers';
-import {zoomToPoint} from '../actions/map';
+import {zoomToPoint, zoomToExtent} from '../actions/map';
 import {changeSearch, startSearch, searchMore, setCurrentSearchResult, SearchResultType} from '../actions/search';
 import {setCurrentTask} from '../actions/task';
 import {setCurrentTheme} from '../actions/theme';
@@ -32,7 +32,6 @@ import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
 import MiscUtils from '../utils/MiscUtils';
 import {UrlParams} from '../utils/PermaLinkUtils';
-import ThemeUtils from '../utils/ThemeUtils';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
 import './style/Search.css';
 
@@ -54,11 +53,14 @@ class Search extends React.Component {
         results: PropTypes.array,
         searchMore: PropTypes.func,
         searchOptions: PropTypes.shape({
+            highlightStyle: PropTypes.object,
+            hideResultLabels: PropTypes.bool,
+            minScaleDenom: PropTypes.number,
+            showLayerAfterChangeTheme: PropTypes.bool,
             showProviderSelection: PropTypes.bool,
             showProvidersInPlaceholder: PropTypes.bool,
             providerSelectionAllowAll: PropTypes.bool,
-            zoomToLayers: PropTypes.bool,
-            minScaleDenom: PropTypes.number
+            zoomToLayers: PropTypes.bool
         }),
         searchProviders: PropTypes.object, // All available search providers
         searchText: PropTypes.string,
@@ -70,7 +72,8 @@ class Search extends React.Component {
         startupParams: PropTypes.object,
         startupSearch: PropTypes.bool,
         theme: PropTypes.object,
-        themes: PropTypes.object
+        themes: PropTypes.object,
+        zoomToExtent: PropTypes.func
     };
     state = {
         focused: false,
@@ -132,7 +135,8 @@ class Search extends React.Component {
             const searchParams = {
                 mapcrs: this.props.map.projection,
                 displaycrs: this.props.displaycrs,
-                lang: LocaleUtils.lang()
+                lang: LocaleUtils.lang(),
+                theme: this.props.theme
             };
             props.startSearch(props.searchText, searchParams, this.activeProviders(props), startup);
         }
@@ -233,7 +237,7 @@ class Search extends React.Component {
                             return (
                                 <li className={itemClass} key={key} onClick={() => this.props.changeSearch("", [key])} title="">
                                     {
-                                        prov.labelmsgid ? LocaleUtils.tr(prov.labelmsgid) : prov.label
+                                        prov?.params?.title || (prov.labelmsgid ? LocaleUtils.tr(prov.labelmsgid) : prov.label)
                                     }
                                 </li>
                             );
@@ -291,7 +295,7 @@ class Search extends React.Component {
                     key="invisibleLayerQuery"
                     onHide={() => this.setState({invisibleLayerQuery: null})}
                 >
-                    <span role="body">{LocaleUtils.tr("search.invisiblelayer")} <button onClick={this.enableLayer}>{LocaleUtils.tr("search.enablelayer")}</button></span>
+                    <span role="body">{LocaleUtils.tr("search.invisiblelayer")} <button className="button" onClick={this.enableLayer}>{LocaleUtils.tr("search.enablelayer")}</button></span>
                 </MessageBar>
             );
         }
@@ -387,7 +391,7 @@ class Search extends React.Component {
             >
                 {item.thumbnail ? (<img src={item.thumbnail} />) : null}
                 <span dangerouslySetInnerHTML={{__html: item.text}} />
-                {item.theme && addThemes ? (<Icon icon="plus" onClick={(ev) => {this.addThemeLayers(ev, item.theme); this.input.blur();}} title={addTitle}/>) : null}
+                {item.theme && addThemes ? (<Icon icon="plus" onClick={(ev) => { MiscUtils.killEvent(ev); this.addThemeLayers(item.layer); this.input.blur();}} title={addTitle}/>) : null}
             </li>
         );
     };
@@ -447,16 +451,15 @@ class Search extends React.Component {
         }
         if (resultType === SearchResultType.PLACE) {
             this.props.removeLayer("searchselection");
-            let text = item.label !== undefined ? item.label : item.text;
-            text = text.replace(/<[^>]*>/g, '');
+            const label = this.props.searchOptions.hideResultLabels ? '' : (item.label ?? item.text ?? '').replace(/<\/?\w+\s*\/?>/g, '');
             if (item.provider && this.props.searchProviders[item.provider].getResultGeometry) {
-                this.props.searchProviders[item.provider].getResultGeometry(item, (response) => { this.showFeatureGeometry(item, response, text); }, axios);
+                this.props.searchProviders[item.provider].getResultGeometry(item, (response) => { this.showFeatureGeometry(item, response, label); }, axios);
             } else {
                 const layer = {
                     id: "searchselection",
                     role: LayerRole.SELECTION
                 };
-                const marker = this.createMarker([item.x, item.y], item.crs, text);
+                const marker = this.createMarker([item.x, item.y], item.crs, label);
                 this.props.addLayerFeatures(layer, [marker], true);
             }
             this.props.setCurrentSearchResult(item);
@@ -465,19 +468,18 @@ class Search extends React.Component {
             // Show layer tree to notify user that something has happened
             this.props.setCurrentTask('LayerTree');
         } else if (resultType === SearchResultType.EXTERNALLAYER) {
-            // Check if layer is already in the LayerTree
-            const sublayers = LayerUtils.getSublayerNames(item.layer);
-            const existing = this.props.layers.find(l => {
-                return l.type === item.layer.type && l.url === item.layer.url && !isEmpty(LayerUtils.getSublayerNames(l).filter(v => sublayers.includes(v)));
-            });
-            if (existing) {
-                const text = LocaleUtils.tr("search.existinglayer") + ":" + item.layer.title;
-                this.props.showNotification("existinglayer", text);
+            if (item.theme) {
+                if (this.props.searchOptions.showLayerAfterChangeTheme) {
+                    this.props.setCurrentTask('LayerTree');
+                }
+                this.props.setCurrentTheme(item.theme, this.props.themes);
+            } else {
+                this.addThemeLayers(item.layer);
             }
-            this.props.addLayer(item.layer);
-            // Show layer tree to notify user that something has happened
-            this.props.setCurrentTask('LayerTree');
         } else if (resultType === SearchResultType.THEME) {
+            if (this.props.searchOptions.showLayerAfterChangeTheme) {
+                this.props.setCurrentTask('LayerTree');
+            }
             this.props.setCurrentTheme(item.theme, this.props.themes);
         }
 
@@ -500,8 +502,13 @@ class Search extends React.Component {
     showFeatureGeometry = (item, response, text) => {
         if (!isEmpty(response.geometry)) {
             let features = [];
-            const highlightFeature = VectorLayerUtils.wktToGeoJSON(response.geometry, response.crs, this.props.map.projection);
+            const highlightFeature = response.geometry.coordinates ? {
+                type: "Feature",
+                geometry: response.geometry
+            } : VectorLayerUtils.wktToGeoJSON(response.geometry, response.crs, this.props.map.projection);
             if (highlightFeature) {
+                highlightFeature.styleName = 'default';
+                highlightFeature.styleOptions = this.props.searchOptions.highlightStyle || {};
                 const center = VectorLayerUtils.getFeatureCenter(highlightFeature);
                 features = [highlightFeature];
                 if (!response.hidemarker) {
@@ -526,9 +533,22 @@ class Search extends React.Component {
             properties: { label: text }
         };
     };
-    addThemeLayers = (ev, theme) => {
-        ev.stopPropagation();
-        this.props.addLayer(ThemeUtils.createThemeLayer(theme, this.props.themes, LayerRole.USERLAYER));
+    addThemeLayers = (layer) => {
+        // Check if layer is already in the LayerTree
+        const sublayers = LayerUtils.getSublayerNames(layer);
+        const existing = this.props.layers.find(l => {
+            return l.type === layer.type && l.url === layer.url && !isEmpty(LayerUtils.getSublayerNames(l).filter(v => sublayers.includes(v)));
+        });
+        if (existing) {
+            const existingLayerName = (layer.sublayers || []).length === 1 ? layer.sublayers[0].title : layer.title;
+            const text = LocaleUtils.tr("search.existinglayer") + ": " + existingLayerName;
+            this.props.showNotification("existinglayer", text);
+        } else {
+            this.props.addLayer(layer);
+        }
+        if (this.props.searchOptions.zoomToLayers && layer.bbox) {
+            this.props.zoomToExtent(layer.bbox.bounds, layer.bbox.crs);
+        }
         // Show layer tree to notify user that something has happened
         this.props.setCurrentTask('LayerTree');
     };
@@ -565,7 +585,8 @@ export default (searchProviders) => {
             changeLayerProperty: changeLayerProperty,
             setCurrentTask: setCurrentTask,
             setCurrentTheme: setCurrentTheme,
-            showNotification: showNotification
+            showNotification: showNotification,
+            zoomToExtent: zoomToExtent
         }
     )(Search);
 };

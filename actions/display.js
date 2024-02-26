@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,35 +12,11 @@ ReducerIndex.register("display", displayReducer);
 
 export const TOGGLE_FULLSCREEN = 'TOGGLE_FULLSCREEN';
 
-export function requestFullscreen() {
-    if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen();
-    } else if (document.documentElement.msRequestFullscreen) {
-        document.documentElement.msRequestFullscreen();
-    } else if (document.documentElement.mozRequestFullScreen) {
-        document.documentElement.mozRequestFullScreen();
-    } else if (document.documentElement.webkitRequestFullScreen) {
-        document.documentElement.webkitRequestFullScreen();
-    }
-}
-
-export function endFullscreen() {
-    if (document.exitFullscreen) {
-        document.exitFullscreen();
-    } else if (document.msExitFullscreen) {
-        document.msExitFullscreen();
-    } else if (document.mozCancelFullScreen) {
-        document.mozCancelFullScreen();
-    } else if (document.webkitExitFullscreen) {
-        document.webkitExitFullscreen();
-    }
-}
-
 export function toggleFullscreen(fullscreen) {
     if (fullscreen) {
-        requestFullscreen();
+        document.documentElement.requestFullscreen().catch(() => {});
     } else {
-        endFullscreen();
+        document.exitFullscreen().catch(() => {});
     }
     return {
         type: TOGGLE_FULLSCREEN,

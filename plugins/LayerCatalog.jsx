@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -22,13 +22,17 @@ import './style/LayerCatalog.css';
  *
  * Configured through a catalog JSON containing a tree of external layer identifiers.
  *
+ * For `wms` layers, `sublayers: false` denotes that the sublayer structure of the added layer should not
+ * be exposed in the layer tree.
+ *
  * Example:
  * ```json
  * {
  *   "catalog": [
  *     {
- *       "title": "Bauzonen",
- *       "resource": "wms:http://wms.geo.admin.ch#ch.are.bauzonen"
+ *       "title": "Öffentlicher Verkehr swissTLMRegio",
+ *       "resource": "wms:http://wms.geo.admin.ch#ch.swisstopo.vec200-transportation-oeffentliche-verkehr",
+ *       "sublayers": false
  *     },
  *     {
  *       "title": "Gewässerschutz",
@@ -56,15 +60,18 @@ class LayerCatalog extends React.Component {
         active: PropTypes.bool,
         /** The URL to the catalog JSON file. */
         catalogUrl: PropTypes.string,
-        setCurrentTask: PropTypes.func,
-        /** Default window geometry with size, position and docking status. */
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
             initialHeight: PropTypes.number,
             initialX: PropTypes.number,
             initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
+            initiallyDocked: PropTypes.bool,
+            side: PropTypes.string
         }),
+        /** Whether to increase the indent size dynamically according to the current level (`true`) or keep the indent size constant (`false`). */
+        levelBasedIndentSize: PropTypes.bool,
+        setCurrentTask: PropTypes.func
     };
     static defaultProps = {
         geometry: {
@@ -72,8 +79,10 @@ class LayerCatalog extends React.Component {
             initialHeight: 320,
             initialX: 0,
             initialY: 0,
-            initiallyDocked: false
-        }
+            initiallyDocked: false,
+            side: 'left'
+        },
+        levelBasedIndentSize: true
     };
     state = {
         catalog: null
@@ -98,11 +107,14 @@ class LayerCatalog extends React.Component {
             return null;
         }
         return (
-            <ResizeableWindow icon="catalog" initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
-                initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY} initiallyDocked={this.props.geometry.initiallyDocked}
-                onClose={this.onClose} title={LocaleUtils.trmsg("layercatalog.windowtitle")} >
+            <ResizeableWindow dockable={this.props.geometry.side} icon="catalog"
+                initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+                initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
+                initiallyDocked={this.props.geometry.initiallyDocked}
+                onClose={this.onClose} title={LocaleUtils.trmsg("layercatalog.windowtitle")}
+            >
                 <div className="layer-catalog" role="body">
-                    <LayerCatalogWidget catalog={this.state.catalog} pendingRequests={0} />
+                    <LayerCatalogWidget catalog={this.state.catalog} levelBasedIndentSize={this.props.levelBasedIndentSize} pendingRequests={0} />
                 </div>
             </ResizeableWindow>
         );

@@ -11,10 +11,14 @@ import ol from 'openlayers';
 export default {
     create: (options) => {
         return new ol.layer.Tile({
+            minResolution: options.minResolution,
+            maxResolution: options.maxResolution,
             source: new ol.source.XYZ({
                 url: options.url,
-                projection: options.projection
-            })
+                projection: options.projection,
+                ...(options.sourceConfig || {})
+            }),
+            ...(options.layerConfig || {})
         });
     }
 };

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,13 +9,12 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import PropTypes from 'prop-types';
-import isEqual from 'lodash.isequal';
-import omit from 'lodash.omit';
 import ol from 'openlayers';
 import {setLayerLoading} from '../../actions/layers';
 import CoordinatesUtils from '../../utils/CoordinatesUtils';
 import Signal from '../../utils/Signal';
 import LayerRegistry from './layers/index';
+import MapUtils from '../../utils/MapUtils';
 
 export const OlLayerAdded = new Signal();
 export const OlLayerUpdated = new Signal();
@@ -50,7 +49,7 @@ class OlLayer extends React.Component {
             this.state.layer.setVisible(newOptions.visibility);
         }
         this.state.layer.setOpacity(newOptions.opacity / 255.0);
-        this.state.layer.setZIndex(newOptions.zIndex);
+        this.state.layer.setZIndex(this.props.zIndex);
 
         if (this.props.swipe !== prevProps.swipe) {
             this.props.map.render();
@@ -70,16 +69,19 @@ class OlLayer extends React.Component {
         return null;
     }
     makeOptions = (options) => {
+        const projection = options.srs || options.crs || options.projection || this.props.projection;
         return {
             ...options,
-            projection: options.srs || options.crs || options.projection || this.props.projection,
-            opacity: options.opacity !== undefined ? options.opacity : 255
+            projection: projection,
+            opacity: options.opacity !== undefined ? options.opacity : 255,
+            minResolution: typeof options.minScale === 'number' ? MapUtils.getResolutionsForScales([options.minScale], projection)[0] : undefined,
+            maxResolution: typeof options.maxScale === 'number' ? MapUtils.getResolutionsForScales([options.maxScale], projection)[0] : undefined
         };
     };
     createLayer = (options) => {
         let layer = null;
         if (options.type === 'group') {
-            layer = new ol.layer.Group({zIndex: this.props.options.zIndex});
+            layer = new ol.layer.Group({zIndex: this.props.zIndex});
             layer.setLayers(new ol.Collection(options.items.map(item => {
                 const layerCreator = LayerRegistry[item.type];
                 if (layerCreator) {
@@ -107,7 +109,7 @@ class OlLayer extends React.Component {
     };
     updateLayer = (newOptions, oldOptions) => {
         // optimization to avoid to update the layer if not necessary
-        if (isEqual(omit(newOptions, ["loading"]), omit(oldOptions, ["loading"]) ) ) {
+        if (newOptions === oldOptions) {
             return;
         }
         const layerCreator = LayerRegistry[this.props.options.type];

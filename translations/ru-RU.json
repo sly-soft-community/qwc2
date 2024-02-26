@@ -1,15 +1,23 @@
 {
   "locale": "ru-RU",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Карта и инструменты",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "Экспорт в DXF",
         "Editing": "Правка",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Помощь",
         "IdentifyPoint": "",
         "IdentifyRegion": "Определить регион",
@@ -21,8 +29,10 @@
         "Measure": "Измерения",
         "MeasureLineString": "измерить линию",
         "MeasurePolygon": "измерить многоугольник",
+        "Portal": "",
         "Print": "Печать",
         "RasterExport": "Экспорт в растровый Формат бумаги",
+        "MapExport": "экспортировать карту",
         "Redlining": "Обводка",
         "Routing": "",
         "Share": "Поделиться ссылкой",
@@ -31,11 +41,13 @@
         "Bookmark": "",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Карта и инструменты"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Копировать",
-      "copied": "Скопировано"
+      "copied": "Скопировано",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Развернуть",
       "minimize": "Свернуть",
-      "nocompatpick": "",
       "noeditablelayers": "Отсутствуют доступные для редактирования слои.",
       "paint": "",
       "pick": "Выбрать",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Выберите файл..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "над у.м.",
       "distance": "Дистанция",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Высота",
-      "loading": "Расчет высоты профиля..."
+      "loading": "Расчет высоты профиля...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "",
       "nofeatures": "Нет объектов, доступных для импорта",
       "noresults": "",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "",
       "urlplaceholder": "Введите URL для WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Загрузка...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Формат бумаги:",
+      "resolution": "Разрешение:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Высота над уровнем моря",
       "title": "Позиция"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Позиция"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Формат бумаги",
       "grid": "Сетка",
       "layout": "Формат бумаги",
       "legend": "",
@@ -302,6 +353,7 @@
       "label": "Надпись",
       "layer": "",
       "line": "Линия",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Выбрать",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Всё",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "",
       "existinglayer": "",
+      "filter": "",
       "invisiblelayer": "",
+      "limittoarea": "",
       "more": "Больше...",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Поиск",
       "searchall": "",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": ""
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": ""
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR-код",
       "directLinkTitle": "По прямой ссылке",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "В Вашей любимой соцсети"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "",
       "addtotheme": "",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Фильтр...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

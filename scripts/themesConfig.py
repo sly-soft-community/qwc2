@@ -1,6 +1,6 @@
 #!/bin/python
 
-# Copyright 2017-2021 Sourcepole AG
+# Copyright 2017-2024 Sourcepole AG
 # All rights reserved.
 #
 # This source code is licensed under the BSD-style license found in the
@@ -223,6 +223,14 @@ def getLayerTree(layer, resultLayers, visibleLayers, printLayers, level, collaps
             layerEntry["keywords"] = ", ".join(keywords)
         except:
             pass
+        
+        styles = {}
+        for style in layer.getElementsByTagName("Style"):
+            name = getChildElementValue(style, "Name")
+            title = getChildElementValue(style, "Title")
+            styles[name] = title
+        layerEntry["styles"] = styles
+        layerEntry['style'] = 'default' if 'default' in styles else (list(styles)[0] if len(styles) > 0 else '')
 
         if layer.getAttribute("transparency"):
             layerEntry["opacity"] = 255 - int(float(layer.getAttribute("transparency")) * 255)
@@ -313,7 +321,7 @@ def getTheme(config, configItem, result, resultItem):
                     keywords.append(value)
 
         # collect WMS layers for printing
-        printLayers = []
+        printLayers = configItem["extraPrintLayers"] if "extraPrintLayers" in configItem else []
         if "backgroundLayers" in configItem:
             printLayers = [entry["printLayer"] for entry in configItem["backgroundLayers"] if "printLayer" in entry]
 
@@ -366,6 +374,7 @@ def getTheme(config, configItem, result, resultItem):
                 labels = [composerLabel.getAttribute("name") for composerLabel in composerLabels]
                 if "printLabelBlacklist" in configItem:
                     labels = list(filter(lambda label: label not in configItem["printLabelBlacklist"], labels))
+                printTemplate['default'] = printTemplate['name'] == configItem.get('defaultPrintLayout')
 
                 if labels:
                     printTemplate["labels"] = labels
@@ -417,6 +426,8 @@ def getTheme(config, configItem, result, resultItem):
         resultItem["availableFormats"] = availableFormats
         if "tiled" in configItem:
             resultItem["tiled"] = configItem["tiled"]
+        if "tileSize" in configItem:
+            resultItem["tileSize"] = configItem["tileSize"]
         if "version" in configItem:
             resultItem["version"] = configItem["version"]
         elif "defaultWMSVersion" in config:
@@ -456,6 +467,8 @@ def getTheme(config, configItem, result, resultItem):
         resultItem["externalLayers"] = externalLayers
         if "pluginData" in configItem:
             resultItem["pluginData"] = configItem["pluginData"]
+        if "predefinedFilters" in configItem:
+            resultItem["predefinedFilters"] = configItem["predefinedFilters"]
         if "snapping" in configItem:
             resultItem["snapping"] = configItem["snapping"]
         if "minSearchScaleDenom" in configItem:
@@ -507,6 +520,9 @@ def getTheme(config, configItem, result, resultItem):
         if "config" in configItem:
             resultItem["config"] = configItem["config"]
 
+        if "flags" in configItem:
+            resultItem["flags"] = configItem["flags"]
+
         if "mapTips" in configItem:
             resultItem["mapTips"] = configItem["mapTips"]
 
@@ -516,7 +532,7 @@ def getTheme(config, configItem, result, resultItem):
         resultItem["editConfig"] = getEditConfig(configItem["editConfig"] if "editConfig" in configItem else None)
 
         # set default theme
-        if "default" in configItem or not result["themes"]["defaultTheme"]:
+        if configItem.get("default", False) or not result["themes"]["defaultTheme"]:
             result["themes"]["defaultTheme"] = resultItem["id"]
 
         # use first CRS for thumbnail request which is not CRS:84

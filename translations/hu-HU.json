@@ -1,15 +1,23 @@
 {
   "locale": "hu-HU",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Eszközök",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "DXF Exportálás",
         "Editing": "Szerkesztés",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Segítség",
         "IdentifyPoint": "",
         "IdentifyRegion": "Adatok lekérdezése",
@@ -21,8 +29,10 @@
         "Measure": "Mérés",
         "MeasureLineString": "Mérési vonal",
         "MeasurePolygon": "Mérési sokszög",
+        "Portal": "",
         "Print": "Nyomtatás",
         "RasterExport": "Kép exportálása",
+        "MapExport": "Export térkép",
         "Redlining": "Vázlat",
         "Routing": "",
         "Share": "Megosztható link",
@@ -31,11 +41,13 @@
         "Bookmark": "",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Eszközök"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Kattints a másoláshoz",
-      "copied": "Kimásolva"
+      "copied": "Kimásolva",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "",
       "minimize": "",
-      "nocompatpick": "",
       "noeditablelayers": "Nincs szerkeszthető fólia.",
       "paint": "",
       "pick": "Kiválasztás",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Fájl választása..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Távolság",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Magasság",
-      "loading": "A magassági profil kiszámítása..."
+      "loading": "A magassági profil kiszámítása...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "",
       "nofeatures": "Nem sikerült az importálás.",
       "noresults": "",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "",
       "urlplaceholder": "URL a WMS, WMTS, WFS adatokhoz..."
     },
@@ -221,6 +248,22 @@
       "loading": "Betöltés...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Formátum:",
+      "resolution": "Felbontás:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Magasság",
       "title": "Pozíció"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Pozíció"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Formátum",
       "grid": "Rács",
       "layout": "Elrendezés",
       "legend": "",
@@ -302,6 +353,7 @@
       "label": "Címke",
       "layer": "",
       "line": "Vonaé",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Kiválaszás",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Minden",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "",
       "existinglayer": "",
+      "filter": "",
       "invisiblelayer": "",
+      "limittoarea": "",
       "more": "Több...",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Keresés",
       "searchall": "",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": ""
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": ""
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR-kód",
       "directLinkTitle": "Közvetlen hivatkozással...",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "A kedvenc közösségi hálózatodon"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "",
       "addtotheme": "",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Szűrés...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

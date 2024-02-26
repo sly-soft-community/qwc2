@@ -1,5 +1,5 @@
 /**
- * Copyright 2018-2021 Sourcepole AG
+ * Copyright 2018-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -13,8 +13,10 @@ import {remove as removeDiacritics} from 'diacritics';
 
 import {SearchResultType} from '../actions/search';
 import {LayerRole} from '../actions/layers';
+import {NotificationType, showNotification} from '../actions/windows';
 import ConfigUtils from './ConfigUtils';
 import LayerUtils from './LayerUtils';
+import LocaleUtils from './LocaleUtils';
 
 const ThemeUtils = {
     getThemeById(themes, id) {
@@ -31,7 +33,7 @@ const ThemeUtils = {
         }
         return null;
     },
-    createThemeBackgroundLayers(theme, themes, visibleLayer, externalLayers) {
+    createThemeBackgroundLayers(theme, themes, visibleLayer, externalLayers, dispatch, initialTheme) {
         const bgLayers = [];
         let visibleIdx = -1;
         let defaultVisibleIdx = -1;
@@ -50,6 +52,7 @@ const ThemeUtils = {
                 bgLayer = {
                     ...bgLayer,
                     role: LayerRole.BACKGROUND,
+                    thumbnail: bgLayer.thumbnail || "img/mapthumbs/default.jpg",
                     visibility: false,
                     opacity: bgLayer.opacity !== undefined ? bgLayer.opacity : 255
                 };
@@ -91,6 +94,9 @@ const ThemeUtils = {
         } else if (defaultVisibleIdx >= 0 && visibleLayer !== "") {
             bgLayers[defaultVisibleIdx].visibility = true;
         }
+        if (initialTheme && visibleIdx === -1 && visibleLayer) {
+            dispatch(showNotification("missingbglayer", LocaleUtils.tr("app.missingbg", visibleLayer), NotificationType.WARN, true));
+        }
         return bgLayers;
     },
     createThemeLayer(theme, themes, role = LayerRole.THEME, subLayers = []) {
@@ -102,8 +108,9 @@ const ThemeUtils = {
             urlParts.host = locationParts.host;
         }
         const baseParams = urlParts.query;
-        const layer = {
+        let layer = {
             type: "wms",
+            id: theme.id,
             url: url.format(urlParts),
             version: theme.version || themes.defaultWMSVersion || "1.3.0",
             visibility: true,
@@ -135,6 +142,7 @@ const ThemeUtils = {
                 }, {})
             }
         };
+        layer = LayerUtils.recomputeLayerBBox(layer);
         // Drawing order only makes sense if layer reordering is disabled
         if (ConfigUtils.getConfigProp("allowReorderingLayers", theme) !== true) {
             layer.drawingOrder = theme.drawingOrder;
@@ -154,7 +162,14 @@ const ThemeUtils = {
     },
     searchThemes(themes, searchtext) {
         const filter = new RegExp(removeDiacritics(searchtext).replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&"), "i");
-        const matches = ThemeUtils.searchThemeGroup(themes, filter);
+        const matches = [];
+        const searchThemeGroup = (themeGroup) => {
+            (themeGroup.subdirs || []).forEach(subdir => searchThemeGroup(subdir, filter));
+            matches.push(...(themeGroup.items || []).filter(item => {
+                return removeDiacritics(item.title).match(filter) || removeDiacritics(item.keywords || "").match(filter) || removeDiacritics(item.abstract || "").match(filter);
+            }));
+        };
+        searchThemeGroup(themes, filter);
         return isEmpty(matches) ? [] : [{
             id: "themes",
             titlemsgid: "search.themes",
@@ -164,17 +179,71 @@ const ThemeUtils = {
                 id: theme.id,
                 text: theme.title,
                 theme: theme,
+                layer: ThemeUtils.createThemeLayer(theme, themes),
                 thumbnail: ConfigUtils.getAssetsPath() + "/" + theme.thumbnail
             }))
         }];
     },
-    searchThemeGroup(themeGroup, filter) {
+    searchThemeLayers(themes, searchtext) {
+        const filter = new RegExp(removeDiacritics(searchtext).replace(/[-[\]/{}()*+?.\\^$|]/g, "\\$&"), "i");
         const matches = [];
-        (themeGroup.subdirs || []).map(subdir => matches.push(...ThemeUtils.searchThemeGroup(subdir, filter)));
-        matches.push(...(themeGroup.items || []).filter(item => {
-            return removeDiacritics(item.title).match(filter) || removeDiacritics(item.keywords || "").match(filter) || removeDiacritics(item.abstract || "").match(filter);
-        }));
-        return matches;
+        const searchLayer = (theme, layer, path = []) => {
+            (layer.sublayers || []).forEach((sublayer, idx) => {
+                const subpath = [...path, idx];
+                if (removeDiacritics(sublayer.name).match(filter) || removeDiacritics(sublayer.title).match(filter)) {
+                    // Clone theme, ensuring path to layer is visible
+                    const newtheme = {...theme};
+                    let cur = newtheme;
+                    for (let i = 0; i < subpath.length; ++i) {
+                        const isMutuallyExclusive = cur.mutuallyExclusive;
+                        cur.sublayers = cur.sublayers.map((entry, j) => ({
+                            ...entry,
+                            visibility: j === subpath[i] || (entry.visibility && !isMutuallyExclusive)
+                        }));
+                        cur = cur.sublayers[subpath[i]];
+                    }
+                    matches.push({
+                        theme: newtheme,
+                        layer: ThemeUtils.createThemeLayer(newtheme, themes, LayerRole.USERLAYER, [cur])
+                    });
+                }
+                searchLayer(theme, sublayer, subpath);
+            });
+        };
+        const searchThemeGroup = (themeGroup) => {
+            (themeGroup.subdirs || []).forEach(subdir => searchThemeGroup(subdir, filter));
+            (themeGroup.items || []).forEach(item => searchLayer(item, item));
+        };
+        searchThemeGroup(themes, filter);
+        return isEmpty(matches) ? [] : [{
+            id: "themelayers",
+            titlemsgid: "search.themelayers",
+            priority: -1,
+            items: matches.map(result => ({
+                type: SearchResultType.EXTERNALLAYER,
+                id: result.layer.id + ":" + result.layer.sublayers[0].name,
+                text: result.layer.title + ": " + result.layer.sublayers[0].title,
+                layer: result.layer,
+                theme: result.theme
+            }))
+        }];
+    },
+    getThemeNames(themes) {
+        const names = (themes.items || []).reduce((res, theme) => ({...res, [theme.id]: theme.title}), {});
+        (themes.subdirs || []).forEach(group => {
+            Object.assign(names, ThemeUtils.getThemeNames(group));
+        });
+        return names;
+    },
+    themFlagsAllowed(theme, flagWhitelist, flagBlacklist) {
+        const themeFlags = theme?.flags || [];
+        if (flagBlacklist && flagBlacklist.find(flag => themeFlags.includes(flag)) !== undefined) {
+            return false;
+        }
+        if (flagWhitelist && flagWhitelist.find(flag => themeFlags.includes(flag)) === undefined) {
+            return false;
+        }
+        return true;
     }
 };
 

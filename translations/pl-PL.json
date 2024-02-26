@@ -1,15 +1,23 @@
 {
   "locale": "pl-PL",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Zawartość mapy i narzędzia",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "Eksport DXF",
         "Editing": "Edycja",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Pomoc",
         "IdentifyPoint": "",
         "IdentifyRegion": "Identifikuj Obszar",
@@ -21,8 +29,10 @@
         "Measure": "Pomiary",
         "MeasureLineString": "Zmierzyć linię",
         "MeasurePolygon": "Zmierzyć wielokąt",
+        "Portal": "",
         "Print": "Drukuj",
         "RasterExport": "Eksport Rastra",
+        "MapExport": "Eksportuj mapę",
         "Redlining": "Redlining",
         "Routing": "",
         "Share": "Udostępnij Link",
@@ -31,11 +41,13 @@
         "Bookmark": "",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Zawartość mapy i narzędzia"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Kliknij, aby skopiować",
-      "copied": "Skopiowano"
+      "copied": "Skopiowano",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Maksymalizuj",
       "minimize": "Minimalizuj",
-      "nocompatpick": "",
       "noeditablelayers": "Brak edytowalnych warstw.",
       "paint": "",
       "pick": "Wybierz",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Wybierz plik..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Odległość",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Wysokość",
-      "loading": "Obliczanie profilu wysokości..."
+      "loading": "Obliczanie profilu wysokości...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "Plik lokalny",
       "nofeatures": "Elementy nie mogły zostać zaimportowane",
       "noresults": "Brak wyników lub błędny adres URL",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "Podaj URL do WMS, WFS, WMTS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Ładowanie...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Format:",
+      "resolution": "Rozdzielczość:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Wysokość",
       "title": "Pozycja"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Pozycja"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Format",
       "grid": "Siatka",
       "layout": "Layout",
       "legend": "",
@@ -302,6 +353,7 @@
       "label": "Etykieta",
       "layer": "Warstwa",
       "line": "Linia",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Wybierz",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Wszystko",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Włącz warstwę",
       "existinglayer": "",
+      "filter": "",
       "invisiblelayer": "Wynik znajduje się na warstwie, która nie jest widoczna.",
+      "limittoarea": "",
       "more": "Więcej...",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Szukaj",
       "searchall": "Szukaj miejsc lub dodaj mapy...",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": "Motywy"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": ""
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR code",
       "directLinkTitle": "Poprzez link bezpośredni",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "W twoich ulubionych mediach społecznościowych"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "",
       "addtotheme": "Dodaj do obecnego motywu",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Filtruj...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015-2016 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -26,6 +26,7 @@ const MapUtils = {
     GET_PIXEL_FROM_COORDINATES_HOOK: 'GET_PIXEL_FROM_COORDINATES_HOOK',
     GET_COORDINATES_FROM_PIXEL_HOOK: 'GET_COORDINATES_FROM_PIXEL_HOOK',
     GET_NATIVE_LAYER: 'GET_NATIVE_LAYER',
+    GET_MAP: 'GET_MAP',
 
     registerHook(name, hook) {
         hooks[name] = hook;

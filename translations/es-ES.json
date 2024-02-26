@@ -1,15 +1,23 @@
 {
   "locale": "es-ES",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "Menú de filtros...",
-      "menulabel": "Mapa & Herramientas",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "Tabla de Atributos",
         "Cyclomedia": "",
         "DxfExport": "Exportar DXF",
-        "Editing": "Editando",
+        "Editing": "Edición",
         "FeatureForm": "Formulario de Elemento",
+        "FeatureSearch": "",
         "Help": "Ayuda",
         "IdentifyPoint": "Identificar punto",
         "IdentifyRegion": "Identificar zona",
@@ -21,21 +29,25 @@
         "Measure": "Medida",
         "MeasureLineString": "Medir una línea",
         "MeasurePolygon": "Medir un polígono",
+        "Portal": "",
         "Print": "Imprimir",
         "RasterExport": "Exportar trama",
+        "MapExport": "Exportar mapa",
         "Redlining": "Línea de demarcación",
-        "Routing": "",
+        "Routing": "Routing",
         "Share": "Compartir enlace",
         "ThemeSwitcher": "Tema",
         "Tools": "Herramientas de Mapa",
         "Bookmark": "Marcadores",
         "TimeManager": "Gestor de Tiempo",
         "Settings": "Opciones"
-      }
+      },
+      "menulabel": "Mapa & Herramientas"
     },
     "attribtable": {
       "addfeature": "Añadir elemento",
       "commit": "Commit de la fila modificada",
+      "csvexport": "",
       "delete": "Eliminar",
       "deletefailed": "Uno o más elementos no han podido eliminarse",
       "deletefeatures": "Eliminar elementos seleccionados",
@@ -44,6 +56,7 @@
       "formeditmode": "Abrir el formulario de edición del elemento seleccionado",
       "geomnoadd": "Por favor use el formulario de edición para añadir elementos a esta capa",
       "layer": "Capa",
+      "limittoextent": "",
       "loadfailed": "No se han podido cargar los datos del elemento",
       "loading": "Cargando...",
       "nodelete": "No eliminar",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Clic para copiar",
-      "copied": "Copiado"
+      "copied": "Copiado",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "Formulario inválido",
       "maximize": "Maximizar",
       "minimize": "Minimizar",
-      "nocompatpick": "Ninguna geometría compatible encontrada",
       "noeditablelayers": "Sin capas a modificar.",
       "paint": "Modificar",
       "pick": "Elegir",
@@ -129,6 +143,12 @@
       "querying": "Consultando...",
       "title": "Formulario de elemento"
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "archivos",
       "placeholder": "Seleccionar archivo..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Distancia",
+      "drawnodes": "",
+      "error": "",
       "export": "Exportar perfil",
       "height": "Altura",
-      "loading": "Cálculo del perfil de altura..."
+      "loading": "Cálculo del perfil de altura...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "Archivo local",
       "nofeatures": "No se pudieron importar elementos.",
       "noresults": "Sin resultados o la dirección URL no es válida",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "Ingrese dirección URL o WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Cargando...",
       "resetrotation": "Reiniciar rotación"
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Formato:",
+      "resolution": "Resolución:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Elevación",
       "title": "Posición"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Posición"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": "por página"
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Formato:",
       "grid": "Grilla:",
       "layout": "Diseño:",
       "legend": "Leyenda",
@@ -302,6 +353,7 @@
       "label": "Etiqueta",
       "layer": "Capa",
       "line": "Línea",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Elegir",
@@ -315,60 +367,67 @@
       "width": "Ancho"
     },
     "routing": {
-      "add": "",
-      "addviapoint": "",
-      "arriveat": "",
-      "clear": "",
-      "computefailed": "",
-      "computing": "",
-      "excludepolygons": "",
-      "export": "",
-      "fastest": "",
-      "fromhere": "",
-      "importerror": "",
-      "importhint": "",
-      "importpoints": "",
-      "iso_intervals": "",
-      "iso_mode": "",
-      "iso_mode_distance": "",
-      "iso_mode_time": "",
-      "isocenter": "",
-      "isoextracenter": "",
-      "leaveat": "",
-      "leavenow": "",
-      "maxspeed": "",
-      "method": "",
-      "mode_auto": "",
-      "mode_bicycle": "",
-      "mode_heavyvehicle": "",
-      "mode_transit": "",
-      "mode_walking": "",
-      "optimized_route": "",
-      "reachability": "",
-      "roundtrip": "",
-      "route": "",
-      "shortest": "",
-      "tohere": "",
-      "useferries": "",
-      "usehighways": "",
-      "usetollways": "",
-      "windowtitle": ""
+      "add": "Añadir punto",
+      "addviapoint": "Pasar por aquí",
+      "arriveat": "Llegar a",
+      "clear": "Limpiar",
+      "computefailed": "Error al calcular",
+      "computing": "Calculando...",
+      "excludepolygons": "Excluir áreas",
+      "export": "Exportar",
+      "fastest": "Más rápido",
+      "fromhere": "Desde aquí",
+      "importerror": "Error al importar. El contenido del archivo debe ser una colección de elementos GeoJSON de tipo Punto.",
+      "importhint": "Archivo con una colección de elementos GeoJSON de tipo Punto",
+      "importpoints": "Importar",
+      "iso_intervals": "Intervalos",
+      "iso_mode": "Modo",
+      "iso_mode_distance": "Distancia",
+      "iso_mode_time": "Tiempo",
+      "isocenter": "Centro",
+      "isoextracenter": "Centro adicional",
+      "leaveat": "Salir a las",
+      "leavenow": "Salir ahora",
+      "maxspeed": "Velocidad máxima",
+      "method": "Método",
+      "mode_auto": "Coche",
+      "mode_bicycle": "Bicicleta",
+      "mode_heavyvehicle": "Vehículo pesado",
+      "mode_transit": "Transporte público",
+      "mode_walking": "Caminar",
+      "optimized_route": "Ruta optimizada",
+      "reachability": "Alcance",
+      "roundtrip": "Viaje de ida y vuelta",
+      "route": "Ruta",
+      "shortest": "Más corto",
+      "tohere": "Hasta aquí",
+      "useferries": "Usar ferris",
+      "usehighways": "Usar autopistas",
+      "usetollways": "Usar autopistas de peaje",
+      "windowtitle": "Routing"
     },
     "scratchdrawing": {
       "finish": "Finalizar"
     },
     "search": {
       "all": "Todo",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Habilitar capa",
       "existinglayer": "La capa ya existe en el mapa",
+      "filter": "",
       "invisiblelayer": "El resultado se encuentra en una capa no visible",
+      "limittoarea": "",
       "more": "Más...",
+      "none": "",
       "noresults": "Sin resultados",
       "providerselection": "Proveedores de búsqueda",
       "search": "Buscar",
       "searchall": "Buscar lugares o agregar mapas...",
       "searchinprogress": "Buscando...",
       "searchreset": "Reiniciar búsqueda",
+      "solr": "",
+      "themelayers": "",
       "themes": "Temas"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Información del tema"
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "Tema",
       "confirmlang": "La aplicación se reiniciará para cambiar de idioma. Quiere continuar?",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "Idioma",
-      "systemlang": "Idioma del sistema"
+      "systemlang": "Idioma del sistema",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "Código QR",
       "directLinkTitle": "Vía un vínculo directo",
+      "expires": "",
       "refresh": "Generar un enlace permanente",
       "shareTitle": "QWC2",
       "showpin": "Mostrar pin",
       "socialIntro": "En tu red social favorita"
     },
     "snapping": {
+      "edge": "",
       "loading": "Cargando geometrías de snapping...",
-      "snappingenabled": "Snapping"
+      "snappingenabled": "Snapping",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "Agregar capa",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Agregar capas al mapa actual",
       "addtotheme": "Agregar al actual tema",
+      "changedefaulttheme": "",
       "confirmswitch": "Las capas sin tema se perderán al cambiar de tema. Continuar?",
       "filter": "Filtrar...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "Final",
+      "filterwarning": "",
       "future": "Futuro",
       "group": "",
       "groupnone": "",

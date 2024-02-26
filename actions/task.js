@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -11,6 +11,7 @@ import taskReducer from '../reducers/task';
 ReducerIndex.register("task", taskReducer);
 
 import {setIdentifyEnabled} from './identify';
+import {showIframeDialog} from './windows';
 import ConfigUtils from '../utils/ConfigUtils';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import MapUtils from '../utils/MapUtils';
@@ -27,12 +28,8 @@ export function setCurrentTask(task, mode = null, mapClickAction = null, data = 
         }
         // Attempt to read mapClickAction from plugin configuration block if not set
         if (!mapClickAction) {
-            try {
-                const device = getState().browser && getState().browser.mobile ? 'mobile' : 'desktop';
-                mapClickAction = getState().localConfig.plugins[device].find(config => config.name === task).mapClickAction;
-            } catch (e) {
-                /* Pass */
-            }
+            const device = getState().browser && getState().browser.mobile ? 'mobile' : 'desktop';
+            mapClickAction = (getState().localConfig.plugins[device] || []).find(config => config.name === task)?.mapClickAction;
         }
         dispatch(setIdentifyEnabled(task === null || mapClickAction === 'identify'));
         dispatch({
@@ -66,7 +63,7 @@ export function setCurrentTaskBlocked(blocked, unloadmsg = null) {
     };
 }
 
-export function openExternalUrl(url) {
+export function openExternalUrl(url, target = '', iframeDialogOpts = {}) {
     return (dispatch, getState) => {
         // Replace all entries in URL
         Object.entries(UrlParams.getParams()).forEach(([key, value]) => {
@@ -98,6 +95,19 @@ export function openExternalUrl(url) {
 
         url = url.replace('$user$', ConfigUtils.getConfigProp("username") || "");
 
-        window.open(url);
+        if (target.startsWith(":iframedialog")) {
+            const targetParts = target.split(":");
+            const options = targetParts.slice(2).reduce((res, cur) => {
+                const parts = cur.split("=");
+                if (parts.length === 2) {
+                    const value = parseFloat(parts[1]);
+                    res[parts[0]] = isNaN(value) ? parts[1] : value;
+                }
+                return res;
+            }, {});
+            dispatch(showIframeDialog(targetParts[2], url, {...iframeDialogOpts, ...options}));
+        } else {
+            window.open(url, target || "_blank");
+        }
     };
 }

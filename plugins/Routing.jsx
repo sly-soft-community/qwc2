@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -48,13 +48,14 @@ class Routing extends React.Component {
         enabledModes: PropTypes.arrayOf(PropTypes.string),
         /** List of search providers to use for routing location search. */
         enabledProviders: PropTypes.arrayOf(PropTypes.string),
-        /** Default window geometry with size, position and docking status. */
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
             initialHeight: PropTypes.number,
             initialX: PropTypes.number,
             initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
+            initiallyDocked: PropTypes.bool,
+            side: PropTypes.string
         }),
         layers: PropTypes.array,
         locatePos: PropTypes.array,
@@ -62,6 +63,8 @@ class Routing extends React.Component {
         removeLayer: PropTypes.func,
         searchProviders: PropTypes.object,
         setCurrentTask: PropTypes.func,
+        /** Whether to label the routing waypoint pins with the route point number. */
+        showPinLabels: PropTypes.bool,
         task: PropTypes.object,
         theme: PropTypes.object,
         zoomToExtent: PropTypes.func
@@ -74,8 +77,10 @@ class Routing extends React.Component {
             initialHeight: 640,
             initialX: 0,
             initialY: 0,
-            initiallyDocked: true
-        }
+            initiallyDocked: true,
+            side: 'left'
+        },
+        showPinLabels: true
     };
     state = {
         visible: false,
@@ -174,22 +179,26 @@ class Routing extends React.Component {
                 this.updateIsoConfig({points: [...this.state.isoConfig.points, taskData.isoextracenter]});
             }
         }
+        // Window closed
+        if (!this.state.visible && prevState.visible) {
+            this.props.removeLayer("routinggeometries");
+            this.props.removeLayer("routingmarkers");
+            this.updateRouteConfig({points: [{text: '', pos: null, crs: null}, {text: '', pos: null, crs: null}], result: null}, false);
+            this.updateIsoConfig({point: {text: '', pos: null, crs: null}, result: null}, false);
+        }
+        // No further processing beyond here if not visible
+        if (!this.state.visible) {
+            return;
+        }
         // Tab changed
         if (this.state.currentTab !== prevState.currentTab) {
-            this.props.removeLayer("routingggeometries");
+            this.props.removeLayer("routinggeometries");
             this.props.removeLayer("routingmarkers");
             this.recomputeIfNeeded();
         }
         // Mode changed
         if (this.state.mode !== prevState.mode) {
             this.recomputeIfNeeded();
-        }
-        // Window closed
-        if (!this.state.visible && prevState.visible) {
-            this.props.removeLayer("routingggeometries");
-            this.props.removeLayer("routingmarkers");
-            this.updateRouteConfig({points: [{text: '', pos: null, crs: null}, {text: '', pos: null, crs: null}], result: null});
-            this.updateIsoConfig({point: {text: '', pos: null, crs: null}, result: null});
         }
         // Routing markers
         if (
@@ -233,7 +242,12 @@ class Routing extends React.Component {
         ];
         const enabledButtons = this.props.enabledModes.map(entry => buttons.find(button => button.key === entry));
         return (
-            <ResizeableWindow icon="routing" onClose={() => this.setState({visible: false})} title={LocaleUtils.tr("routing.windowtitle")} {...this.props.geometry}>
+            <ResizeableWindow dockable={this.props.geometry.side} icon="routing"
+                initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+                initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
+                initiallyDocked={this.props.geometry.initiallyDocked}
+                onClose={() => this.setState({visible: false})} title={LocaleUtils.tr("routing.windowtitle")}
+            >
                 <div className="routing-body" role="body">
                     <ButtonBar active={this.state.currentTab} buttons={tabButtons} className="routing-buttonbar" onClick={(key) => this.setState({currentTab: key})} />
                     <div className="routing-frame">
@@ -381,7 +395,7 @@ class Routing extends React.Component {
             diff.time = new Date(Date.now() - tzoffset).toISOString().slice(0, -1);
         }
         this.updateSetting('transit', diff);
-    }
+    };
     setRedliningTool = () => {
         this.props.setCurrentTask("Redlining", null, null, {layerId: this.state.routeConfig.excludeLayer});
     };
@@ -561,7 +575,9 @@ class Routing extends React.Component {
                 ...state[config].points.slice(index)
             ]
         }}));
-        this.recomputeIfNeeded();
+        if (entry.pos) {
+            this.recomputeIfNeeded();
+        }
     };
     updatePoint = (config, idx, diff) => {
         this.setState((state) => ({[config]: {
@@ -625,7 +641,7 @@ class Routing extends React.Component {
             points: newPoints,
             result: null
         }}));
-        this.props.removeLayer("routingggeometries");
+        this.props.removeLayer("routinggeometries");
         this.props.removeLayer("routingmarkers");
         this.recomputeIfNeeded();
     };
@@ -667,12 +683,15 @@ class Routing extends React.Component {
             role: LayerRole.MARKER,
             styleName: 'marker'
         };
-        const features = points.filter(point => point.pos).map(point => ({
+        const features = points.filter(point => point.pos).map((point, idx) => ({
             type: "Feature",
             crs: point.crs,
             geometry: {
                 type: "Point",
                 coordinates: point.pos
+            },
+            properties: {
+                label: this.props.showPinLabels && this.state.routeConfig.result ? String(idx + 1) : null
             }
         }));
         this.props.addLayerFeatures(layer, features, true);
@@ -681,7 +700,7 @@ class Routing extends React.Component {
         const locations = this.state.routeConfig.points.filter(entry => entry.pos).map(entry => {
             return CoordinatesUtils.reproject(entry.pos, entry.crs, "EPSG:4326");
         });
-        this.props.removeLayer("routingggeometries");
+        this.props.removeLayer("routinggeometries");
         this.updateRouteConfig({busy: locations.length >= 2, result: null}, false);
         if (locations.length < 2) {
             return;
@@ -705,8 +724,9 @@ class Routing extends React.Component {
         settings.optimized_route = this.state.routeConfig.optimized_route;
         RoutingInterface.computeRoute(this.state.mode, locations, settings, (success, result) => {
             if (success) {
+                // Add routing leg geometries
                 const layer = {
-                    id: "routingggeometries",
+                    id: "routinggeometries",
                     role: LayerRole.SELECTION,
                     styleName: "default",
                     styleOptions: {
@@ -732,9 +752,21 @@ class Routing extends React.Component {
                     });
                 });
                 this.props.addLayerFeatures(layer, features, true);
-                this.props.zoomToExtent(result.summary.bounds, "EPSG:4326", -0.5);
+
+                // Reorder locations based on routing result, keeping null entries
+                const {points, nullPoints} = this.state.routeConfig.points.reduce((res, point, idx) => {
+                    return point.pos ? {...res, points: [...res.points, point]} : {...res, nullPoints: [...res.nullPoints, {point, idx}]};
+                }, {points: [], nullPoints: []});
+                const reorderedPoints = result.locations.map(location => points[location.orig_idx]).filter(Boolean);
+                nullPoints.forEach(entry => {
+                    reorderedPoints.splice(entry.idx, 0, entry.point);
+                });
+                this.updateRouteConfig({points: reorderedPoints, result: {success, data: result}, busy: false}, false);
+
+                this.props.zoomToExtent(result.summary.bounds, "EPSG:4326", -1);
+            } else {
+                this.updateRouteConfig({result: {success, data: result}, busy: false}, false);
             }
-            this.updateRouteConfig({result: {success, data: result}, busy: false}, false);
         });
     };
     computeIsochrone = () => {
@@ -745,7 +777,7 @@ class Routing extends React.Component {
         const locations = this.state.isoConfig.points.filter(entry => entry.pos).map(entry => {
             return CoordinatesUtils.reproject(entry.pos, entry.crs, "EPSG:4326");
         });
-        this.props.removeLayer("routingggeometries");
+        this.props.removeLayer("routinggeometries");
         this.updateIsoConfig({busy: true, result: null}, false);
         const contourOptions = {
             mode: this.state.isoConfig.mode,
@@ -754,7 +786,7 @@ class Routing extends React.Component {
         RoutingInterface.computeIsochrone(this.state.mode, locations, contourOptions, this.state.settings[this.state.mode], (success, result) => {
             if (success) {
                 const layer = {
-                    id: "routingggeometries",
+                    id: "routinggeometries",
                     role: LayerRole.SELECTION,
                     styleOptions: {
                         strokeColor: [10, 10, 255, 1],

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -28,12 +28,12 @@ class RedliningPickSupport extends React.Component {
         this.selectedFeatures = [];
         const geometryFunction = (feature) => {
             if (feature.getGeometry().getType() === "Point") {
-                return new ol.geom.MultiPoint([f.getGeometry().getCoordinates()]);
+                return new ol.geom.MultiPoint([feature.getGeometry().getCoordinates()]);
             } else if (feature.getGeometry().getType() === "LineString") {
                 return new ol.geom.MultiPoint(feature.getGeometry().getCoordinates());
             }
             return new ol.geom.MultiPoint(feature.getGeometry().getCoordinates()[0]);
-        }
+        };
         this.selectedStyle = FeatureStyles.interactionVertex({geometryFunction});
     }
     componentDidUpdate(prevProps) {
@@ -71,7 +71,7 @@ class RedliningPickSupport extends React.Component {
             // Add newly selected features
             for (const feature of evt.selected || []) {
                 // Skip text features for now
-                if (feature.get("isText")) {
+                if (feature.shape === "Text") {
                     continue;
                 }
                 selectedFeatures.push(feature.getId());

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -85,7 +85,12 @@ class LocateSupport extends React.Component {
     };
     onLocationError = (err) => {
         this.props.onLocateError(err.message);
-        this.props.changeLocateState("DISABLED");
+        // User denied geolocation prompt
+        if (err.code === 1) {
+            this.props.changeLocateState("PERMISSION_DENIED");
+        } else {
+            this.props.changeLocateState("DISABLED");
+        }
     };
     render() {
         return null;

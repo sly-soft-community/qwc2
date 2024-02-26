@@ -1,15 +1,23 @@
 {
   "locale": "en-US",
   "messages": {
+    "app": {
+      "missingbg": "Unable to find the background \"{0}\", displaying the default background.",
+      "missinglayers": "Unable to find the following layers: {0}.",
+      "missingpermalink": "The specified permalink or bookmark is invalid or expired.",
+      "missingprojection": "Unable to load the theme \"{0}\": the projection {1} is not defined.",
+      "missingtheme": "Unable to find the theme \"{0}\", loading the default theme."
+    },
     "appmenu": {
       "filter": "Filter menu...",
-      "menulabel": "Map & Tools",
       "items": {
+        "MapFilter": "Map Filter",
         "AttributeTable": "Attribute Table",
         "Cyclomedia": "Cyclomedia",
         "DxfExport": "DXF Export",
         "Editing": "Editing",
         "FeatureForm": "Feature Form",
+        "FeatureSearch": "Feature Search",
         "Help": "Help",
         "IdentifyPoint": "Identify Point",
         "IdentifyRegion": "Identify Region",
@@ -21,8 +29,10 @@
         "Measure": "Measure",
         "MeasureLineString": "Measure a line",
         "MeasurePolygon": "Measure a polygon",
+        "Portal": "Portal",
         "Print": "Print",
         "RasterExport": "Raster Export",
+        "MapExport": "Export map",
         "Redlining": "Redlining",
         "Routing": "Routing",
         "Share": "Share Link",
@@ -31,11 +41,13 @@
         "Bookmark": "Bookmarks",
         "TimeManager": "Time Manager",
         "Settings": "Settings"
-      }
+      },
+      "menulabel": "Map & Tools"
     },
     "attribtable": {
       "addfeature": "Add feature",
       "commit": "Commit changed row",
+      "csvexport": "CSV export",
       "delete": "Delete",
       "deletefailed": "One or more features could not be deleted",
       "deletefeatures": "Delete selected features",
@@ -44,6 +56,7 @@
       "formeditmode": "Open the edit form for the selected feature",
       "geomnoadd": "Please use the edit form for adding new features to this layer",
       "layer": "Layer",
+      "limittoextent": "Limit to map extent",
       "loadfailed": "Failed to load the feature data",
       "loading": "Loading...",
       "nodelete": "Don't delete",
@@ -80,12 +93,14 @@
     },
     "copybtn": {
       "click_to_copy": "Click to copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "copyfailed": "Copy failed"
     },
     "cyclomedia": {
       "clickonmap": "Click on a recording on the map",
+      "initializing": "Initializing Cyclomedia...",
       "loaderror": "Failed to initialize Cyclomedia",
-      "loading": "Initializing Cyclomedia...",
+      "loading": "Loading view...",
       "login": "Login",
       "scalehint": "The recordings are only visible on the map below scale 1:{0}.",
       "title": "Cyclomedia Viewer"
@@ -111,7 +126,6 @@
       "invalidform": "Invalid form",
       "maximize": "Maximize",
       "minimize": "Minimize",
-      "nocompatpick": "No compatible geometry found",
       "noeditablelayers": "No editable layers.",
       "paint": "Modify",
       "pick": "Pick",
@@ -129,6 +143,12 @@
       "querying": "Querying...",
       "title": "Feature form"
     },
+    "featuresearch": {
+      "noresults": "No results",
+      "query": "Query",
+      "select": "Select...",
+      "title": "Feature search"
+    },
     "fileselector": {
       "files": "files",
       "placeholder": "Select file..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Distance",
+      "drawnodes": "Draw nodes",
+      "error": "Failed to compute height profile",
       "export": "Export profile",
       "height": "Height",
-      "loading": "Calculating height profile..."
+      "loading": "Calculating height profile...",
+      "loadingimage": "Loading map image...",
+      "print": "Print height profile",
+      "title": "Height profile"
     },
     "identify": {
       "clipboard": "Copy to clipboard",
@@ -164,6 +189,8 @@
       "localfile": "Local file",
       "nofeatures": "No features could be imported.",
       "noresults": "No results or invalid URL",
+      "notgeopdf": "The selected file does not seem to be a GeoPDF.",
+      "unknownproj": "The selected GeoPDF uses an unknown projection: {0}.",
       "url": "URL",
       "urlplaceholder": "Enter URL to WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Loading...",
       "resetrotation": "Reset rotation"
     },
+    "mapexport": {
+      "configuration": "Configuration",
+      "format": "Format",
+      "resolution": "Resolution",
+      "scale": "Scale",
+      "size": "Size",
+      "submit": "Export",
+      "usersize": "Select on map...",
+      "wait": "Please wait..."
+    },
+    "mapfilter": {
+      "geomfilter": "Geometry",
+      "timefilter": "Time",
+      "timefrom": "From",
+      "timeto": "To"
+    },
     "mapinfotooltip": {
       "elevation": "Elevation",
       "title": "Position"
@@ -239,6 +282,9 @@
       "metric": "Metric",
       "pointLabel": "Position"
     },
+    "misc": {
+      "ctrlclickhint": "Open with Ctrl+Click"
+    },
     "navbar": {
       "perpage": "per page"
     },
@@ -256,8 +302,13 @@
       "width": "Width",
       "windowtitle": "Numeric input"
     },
+    "portal": {
+      "filter": "Filter themes...",
+      "menulabel": "Menu"
+    },
     "print": {
       "atlasfeature": "Atlas feature",
+      "format": "Format",
       "grid": "Grid",
       "layout": "Layout",
       "legend": "Legend",
@@ -302,6 +353,7 @@
       "label": "Label",
       "layer": "Layer",
       "line": "Line",
+      "markers": "Markers",
       "measurements": "Show measurements",
       "numericinput": "Show numeric input panel",
       "pick": "Pick",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "All",
+      "circleradius": "Circle radius",
+      "clearfilter": "Clear",
       "enablelayer": "Enable layer",
       "existinglayer": "The layer already exists in the map",
+      "filter": "Filter",
       "invisiblelayer": "The result lies on a layer which is not visible.",
+      "limittoarea": "Limit to area",
       "more": "More...",
+      "none": "None",
       "noresults": "No results",
       "providerselection": "Search providers",
       "search": "Search",
       "searchall": "Search places or add maps...",
       "searchinprogress": "Search in progress",
       "searchreset": "Reset search",
+      "solr": "Fulltext search",
+      "themelayers": "Theme layers",
       "themes": "Themes"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Theme Information"
     },
     "settings": {
+      "bookmarks": "Bookmarks",
       "colorscheme": "Color scheme",
       "confirmlang": "The application will be reloaded to change the language. Proceed?",
+      "default": "Default",
+      "defaulttheme": "Default theme",
+      "defaultthemefailed": "Failed to set the default theme: {0}",
       "language": "Language",
-      "systemlang": "System language"
+      "systemlang": "System language",
+      "themes": "Themes"
     },
     "share": {
       "QRCodeLinkTitle": "QR Code",
       "directLinkTitle": "Via a direct link",
+      "expires": "This permalink is valid until {0}.",
       "refresh": "Generate permalink",
       "shareTitle": "QWC2",
       "showpin": "Show pin",
       "socialIntro": "In your favourite social network"
     },
     "snapping": {
+      "edge": "Snap to edges",
       "loading": "Loading snapping geometries...",
-      "snappingenabled": "Snapping"
+      "snappingenabled": "Snapping",
+      "vertex": "Snap to vertices"
     },
     "themelayerslist": {
       "addlayer": "Add layer",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Add layers to current map",
       "addtotheme": "Add to current theme",
+      "changedefaulttheme": "Select this theme as default theme",
       "confirmswitch": "Non-theme layers will be lost when switching theme. Proceed?",
       "filter": "Filter...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "Timeline with features",
       "displaylayers": "Timeline with layers",
       "displayminimal": "Timeline only",
+      "edit": "Edit",
       "endtime": "End",
+      "filterwarning": "Map filters are active",
       "future": "Future",
       "group": "Grouping attribute",
       "groupnone": "None",

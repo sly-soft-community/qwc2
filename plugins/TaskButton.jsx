@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -14,6 +14,7 @@ import {setCurrentTask} from '../actions/task';
 import Icon from '../components/Icon';
 import ConfigUtils from '../utils/ConfigUtils';
 import LocaleUtils from "../utils/LocaleUtils";
+import ThemeUtils from '../utils/ThemeUtils';
 import './style/BackgroundSwitcher.css';
 
 /**
@@ -24,29 +25,36 @@ class TaskButton extends React.Component {
         currentTask: PropTypes.string,
         /** The icon name.  */
         icon: PropTypes.string,
+        mapMargins: PropTypes.object,
         /** The task mode. */
         mode: PropTypes.string,
         /** The position slot index of the map button, from the bottom (0: bottom slot). */
         position: PropTypes.number,
         setCurrentTask: PropTypes.func,
-        splitScreen: PropTypes.object,
         /** The task name. */
-        task: PropTypes.string
+        task: PropTypes.string,
+        theme: PropTypes.object,
+        /** Omit the button in themes matching one of these flags. */
+        themeFlagBlacklist: PropTypes.arrayOf(PropTypes.string),
+        /** Only show the button in themes matching one of these flags. */
+        themeFlagWhitelist: PropTypes.arrayOf(PropTypes.string)
     };
     static defaultProps = {
         position: 1
     };
     render() {
-        const splitWindows = Object.values(this.props.splitScreen);
-        const right = splitWindows.filter(entry => entry.side === 'right').reduce((res, e) => Math.max(e.size, res), 0);
-        const bottom = splitWindows.filter(entry => entry.side === 'bottom').reduce((res, e) => Math.max(e.size, res), 0);
+        if (!ThemeUtils.themFlagsAllowed(this.props.theme, this.props.themeFlagWhitelist, this.props.themeFlagBlacklist)) {
+            return null;
+        }
+        const right = this.props.mapMargins.right;
+        const bottom = this.props.mapMargins.bottom;
         const style = {
             right: 'calc(1.5em + ' + right + 'px)',
             bottom: 'calc(' + bottom + 'px + ' + (5 + 4 * this.props.position) + 'em)'
         };
         const classes = classnames({
             "map-button": true,
-            "button-active": this.props.currentTask === this.props.task
+            "map-button-active": this.props.currentTask === this.props.task
         });
         const title = LocaleUtils.tr("appmenu.items." + this.props.task + (this.props.mode || ""));
         return (
@@ -64,7 +72,8 @@ class TaskButton extends React.Component {
 
 const selector = (state) => ({
     currentTask: state.task.id,
-    splitScreen: state.windows.splitScreen
+    mapMargins: state.windows.mapMargins,
+    theme: state.theme.current
 });
 
 export default connect(selector, {

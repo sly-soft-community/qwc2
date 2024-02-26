@@ -1,15 +1,23 @@
 {
   "locale": "it-IT",
   "messages": {
+    "app": {
+      "missingbg": "Impossibile trovare lo sfondo \"{0}\", viene visualizzato lo sfondo predefinito.",
+      "missinglayers": "Impossibile trovare i seguenti livelli: {0}.",
+      "missingpermalink": "Il permalink o il segnalibro non è valido o è scaduto.",
+      "missingprojection": "Impossibile caricare il tema \"{0}\": la proiezione {1} non è definita.",
+      "missingtheme": "Impossibile trovare il tema \"{0}\", è stato caricato il tema predefinito."
+    },
     "appmenu": {
       "filter": "Filtra menù...",
-      "menulabel": "Mappa e strumenti",
       "items": {
+        "MapFilter": "Filta mappa",
         "AttributeTable": "Tabella attributi",
         "Cyclomedia": "Cyclomedia",
         "DxfExport": "Esporta su DXF",
         "Editing": "Strumenti di modifica",
         "FeatureForm": "Formulario oggetto",
+        "FeatureSearch": "Ricerca oggetto",
         "Help": "Aiuto",
         "IdentifyPoint": "Identifica punto",
         "IdentifyRegion": "Identifica in un poligono",
@@ -21,8 +29,10 @@
         "Measure": "Misura",
         "MeasureLineString": "Misura una linea",
         "MeasurePolygon": "Misura un poligono",
+        "Portal": "Portale",
         "Print": "Stampa",
         "RasterExport": "Esporta su immagine",
+        "MapExport": "Esporta mappa",
         "Redlining": "Strumenti di disegno",
         "Routing": "Routing",
         "Share": "Condividi",
@@ -31,11 +41,13 @@
         "Bookmark": "Segnalibri",
         "TimeManager": "Linea temporale",
         "Settings": "Impostazioni"
-      }
+      },
+      "menulabel": "Mappa e strumenti"
     },
     "attribtable": {
       "addfeature": "Aggiungi oggetto",
       "commit": "Salva riga modificata",
+      "csvexport": "Esporta a CSV",
       "delete": "Elimina",
       "deletefailed": "Impossibile eliminare uno o più oggetti",
       "deletefeatures": "Elimina gli oggetti selezionati",
@@ -44,6 +56,7 @@
       "formeditmode": "Apri il formulario per l'oggetto selezionato",
       "geomnoadd": "Utilizzare il formulario per creare nuovi oggetti per questo livello",
       "layer": "Livello",
+      "limittoextent": "In estensione mappa",
       "loadfailed": "Errore nel caricamento dei dati",
       "loading": "Caricamento...",
       "nodelete": "Non eliminare",
@@ -80,12 +93,14 @@
     },
     "copybtn": {
       "click_to_copy": "Clicca per copiare",
-      "copied": "Copiato"
+      "copied": "Copiato",
+      "copyfailed": "Impossibile copiare"
     },
     "cyclomedia": {
       "clickonmap": "Seleziona un punto di registrazione sulla mappa",
+      "initializing": "Inizializzazione di Cyclomedia...",
       "loaderror": "Errore durante l'inizializzazione di Cyclomedia",
-      "loading": "Inizializzazione di Cyclomedia...",
+      "loading": "Caricamento...",
       "login": "Login",
       "scalehint": "Le registrazioni sono solo visibili sulla mappa a partire da una scala di 1:{0}.",
       "title": "Visualizzatore Cyclomedia"
@@ -111,7 +126,6 @@
       "invalidform": "Formulario invalido",
       "maximize": "Massimizza",
       "minimize": "Minimizza",
-      "nocompatpick": "Nessuna geometria compatibile",
       "noeditablelayers": "Nessun livello modificabile",
       "paint": "Modifica",
       "pick": "Seleziona",
@@ -129,6 +143,12 @@
       "querying": "Caricando...",
       "title": "Formulario oggetto"
     },
+    "featuresearch": {
+      "noresults": "Nessun risultato",
+      "query": "Ricerca",
+      "select": "Seleziona",
+      "title": "Ricerca oggetto"
+    },
     "fileselector": {
       "files": "File",
       "placeholder": "Seleziona file..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "s.l.m.",
       "distance": "Distanza",
+      "drawnodes": "Disegna i nodi",
+      "error": "Impossibile caricare il profilo di altezza",
       "export": "Esporta",
       "height": "Altitudine",
-      "loading": "Calcolo del profilo di altezza..."
+      "loading": "Calcolo del profilo di altezza...",
+      "loadingimage": "Caricamento dell'immagine della mappa...",
+      "print": "Stampa profilo d'altezza",
+      "title": "Profilo di altezza"
     },
     "identify": {
       "clipboard": "Copia negli appunti",
@@ -164,6 +189,8 @@
       "localfile": "File locale",
       "nofeatures": "Non è stato importato nessun oggetto ",
       "noresults": "Nessun risultato o URL non valido",
+      "notgeopdf": "Il file selezionato non sembra essere un GeoPDF.",
+      "unknownproj": "Il GeoPDF selezionato utilizza una proiezione sconosciuta: {0}",
       "url": "URL",
       "urlplaceholder": "Indirizzo WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "In caricamento...",
       "resetrotation": "Resetta orientamento"
     },
+    "mapexport": {
+      "configuration": "Configurazione",
+      "format": "Formato",
+      "resolution": "Risoluzione",
+      "scale": "Scala",
+      "size": "Dimensione",
+      "submit": "Esporta",
+      "usersize": "Seleziona sulla mappa...",
+      "wait": "Attendere..."
+    },
+    "mapfilter": {
+      "geomfilter": "Geometrico",
+      "timefilter": "Temporale",
+      "timefrom": "Da",
+      "timeto": "A"
+    },
     "mapinfotooltip": {
       "elevation": "Altitudine",
       "title": "Posizione"
@@ -239,6 +282,9 @@
       "metric": "Metrico",
       "pointLabel": "Posizione"
     },
+    "misc": {
+      "ctrlclickhint": "Apri con Ctrl+Click"
+    },
     "navbar": {
       "perpage": "per pagina"
     },
@@ -256,8 +302,13 @@
       "width": "Larghezza",
       "windowtitle": "Formulario numerico"
     },
+    "portal": {
+      "filter": "Filtra temi...",
+      "menulabel": "Menu"
+    },
     "print": {
       "atlasfeature": "Oggetto atlante",
+      "format": "Formato",
       "grid": "Griglia",
       "layout": "Layout",
       "legend": "Legenda",
@@ -302,6 +353,7 @@
       "label": "Ettichetta",
       "layer": "Layer",
       "line": "Linea",
+      "markers": "Punte",
       "measurements": "Mostra misurazioni",
       "numericinput": "Formulario numerico",
       "pick": "Seleziona",
@@ -335,7 +387,7 @@
       "isocenter": "Centro",
       "isoextracenter": "Ulteriore centro",
       "leaveat": "Partenza il",
-      "leavenow": "",
+      "leavenow": "Parti ora",
       "maxspeed": "Velocità massima",
       "method": "Metodo",
       "mode_auto": "Automobile",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Tutti",
+      "circleradius": "Raggio del cerchio",
+      "clearfilter": "Azzera",
       "enablelayer": "Attivare il livello",
       "existinglayer": "Il livello esiste già nella mappa",
+      "filter": "Filtro",
       "invisiblelayer": "Il risultato si trova su un livello che non è visibile.",
+      "limittoarea": "Limita a area",
       "more": "Altri risultati",
+      "none": "Nessuna",
       "noresults": "Nessun risultato",
       "providerselection": "Selezione provider",
       "search": "Cerca",
       "searchall": "Cerca località o aggiungi cartine...",
       "searchinprogress": "Ricerca in corso...",
       "searchreset": "Resetta ricerca",
+      "solr": "Full text",
+      "themelayers": "Livelli di temi",
       "themes": "Temi"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Informazioni sul tema"
     },
     "settings": {
+      "bookmarks": "Segnalibri",
       "colorscheme": "Stile",
       "confirmlang": "L'applicazione sarà ricaricata per cambiare la lingua. Procedere?",
+      "default": "Predefinito",
+      "defaulttheme": "Tema predefinito",
+      "defaultthemefailed": "Impossibile cambiare il tema predefinito: {0}",
       "language": "Lingua",
-      "systemlang": "Lingua del sistema"
+      "systemlang": "Lingua del sistema",
+      "themes": "Temi"
     },
     "share": {
       "QRCodeLinkTitle": "Codice QR",
       "directLinkTitle": "Collegamento diretto",
+      "expires": "Questo permalink è valido fino al {0}.",
       "refresh": "Genera permalink",
       "shareTitle": "QWC2",
       "showpin": "Mostra pin",
       "socialIntro": "Social network"
     },
     "snapping": {
+      "edge": "Snap ai bordi",
       "loading": "Caricamento delle geometrie per snapping",
-      "snappingenabled": "Snapping"
+      "snappingenabled": "Snapping",
+      "vertex": "Snap ai vertici"
     },
     "themelayerslist": {
       "addlayer": "Aggiungi layer",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Aggiungi layer alla mappa corrente",
       "addtotheme": "Aggiungere al tema corrente",
+      "changedefaulttheme": "Imposta come tema predefinito",
       "confirmswitch": "Layer che non fanno parte del tema saranno rimossi. Procedere?",
       "filter": "Filtra...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "Linea temporale con oggetti",
       "displaylayers": "Linea temporale con livelli",
       "displayminimal": "Solo linea temporale",
+      "edit": "Modifica",
       "endtime": "Fine",
+      "filterwarning": "Sono attivi filtri sulla mappa",
       "future": "Futuro",
       "group": "Raggruppa per attributo",
       "groupnone": "Nessuno",

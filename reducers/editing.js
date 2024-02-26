@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -22,7 +22,7 @@ const checkGeomReadOnly = (oldState, newFeature) => {
     if (!newFeature) {
         return false;
     } else if (newFeature.id !== ((oldState || {}).feature || {}).id) {
-        return nonZeroZCoordinate((newFeature.geometry || {}).coordinates || []);
+        return nonZeroZCoordinate([newFeature.geometry?.coordinates || []]) !== undefined;
     }
     return (oldState || {}).geomReadOnly || false;
 };

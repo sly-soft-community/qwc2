@@ -1,15 +1,23 @@
 {
   "locale": "tr-TR",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Harita & Araçlar",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "DXF'e Veri Aktar",
         "Editing": "Düzenleme",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Yardım",
         "IdentifyPoint": "",
         "IdentifyRegion": "Bölgeden Bilgi Al",
@@ -21,8 +29,10 @@
         "Measure": "Ölç",
         "MeasureLineString": "Bir çizgiyi ölçmek",
         "MeasurePolygon": "Bir çokgen ölçmek",
+        "Portal": "",
         "Print": "Yazdır",
         "RasterExport": "Resim Olarak Kaydet",
+        "MapExport": "Ihracat haritası",
         "Redlining": "Çizim",
         "Routing": "",
         "Share": "Bağlantı Paylaş",
@@ -31,11 +41,13 @@
         "Bookmark": "",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Harita & Araçlar"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Kopyalamak için tıkla",
-      "copied": "Kopyalandı"
+      "copied": "Kopyalandı",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Büyült",
       "minimize": "Küçült",
-      "nocompatpick": "",
       "noeditablelayers": "Düzenlenebilir katman yok.",
       "paint": "",
       "pick": "Seç",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Dosya seç..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Mesafe",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Yükseklik",
-      "loading": "Yükseklik profili hesaplanıyor..."
+      "loading": "Yükseklik profili hesaplanıyor...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "Yerel dosya",
       "nofeatures": "Herhangi bir obje içeriye aktarılamadı.",
       "noresults": "Sonuç yok ya da geçersiz URL",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "WMS, WMTS, WFS Adresini giriniz..."
     },
@@ -221,6 +248,22 @@
       "loading": "Yükleniyor...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Format:",
+      "resolution": "Çözünürlük:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Yükseklik",
       "title": "Konum"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Konum"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Format",
       "grid": "Grid",
       "layout": "Yazdırma düzeni",
       "legend": "",
@@ -302,6 +353,7 @@
       "label": "Etiket",
       "layer": "Katman",
       "line": "Çizgi",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Seç",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Tümü",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Geçerli katman",
       "existinglayer": "Katman zaten haritada mevcut",
+      "filter": "",
       "invisiblelayer": "Sonuç, görünmeyen bir katmanda bulunuyor.",
+      "limittoarea": "",
       "more": "Daha fazla...",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Ara",
       "searchall": "Bir yer ara ya da harita ekle...",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": "Temalar"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": ""
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "Karekod",
       "directLinkTitle": "Doğrudan bağlantı yolu ile",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "Favori sosyal ağınıza"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "Katman ekle",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Geçerli haritaya katmanları ekle",
       "addtotheme": "Geçerli temaya ekle",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Filtre...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

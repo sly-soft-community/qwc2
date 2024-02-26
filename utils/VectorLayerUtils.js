@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -10,13 +10,15 @@ import {v1 as uuidv1} from 'uuid';
 import ol from 'openlayers';
 import isEmpty from 'lodash.isempty';
 import geojsonBbox from 'geojson-bounding-box';
+import svgpath from 'svgpath';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import ConfigUtils from '../utils/ConfigUtils';
 import {getDefaultImageStyle} from 'ol/format/KML';
+import {END_MARKERS, computeFeatureStyle} from '../utils/FeatureStyles';
 
 
 const VectorLayerUtils = {
-    createPrintHighlighParams(layers, printCrs, dpi = 96, scaleFactor = 1.0) {
+    createPrintHighlighParams(layers, printCrs, printScale, dpi = 96, scaleFactor = 1.0) {
         const qgisServerVersion = ConfigUtils.getConfigProp("qgisServerVersion") || 3;
         const params = {
             geoms: [],
@@ -25,9 +27,9 @@ const VectorLayerUtils = {
             labelFillColors: [],
             labelOultineColors: [],
             labelOutlineSizes: [],
-            labelSizes: []
+            labelSizes: [],
+            labelDist: []
         };
-        const defaultFeatureStyle = ConfigUtils.getConfigProp("defaultFeatureStyle");
         let ensureHex = null;
         if (qgisServerVersion >= 3) {
             ensureHex = (rgb) => (!Array.isArray(rgb) ? rgb : '#' + [255 - (rgb.length > 3 ? rgb[3] : 1) * 255, ...rgb.slice(0, 3)].map(v => v.toString(16).padStart(2, '0')).join(''));
@@ -40,11 +42,22 @@ const VectorLayerUtils = {
                 continue;
             }
             for (const feature of layer.features) {
-                if (!feature.geometry) {
+                if (!VectorLayerUtils.validateGeometry(feature.geometry)) {
                     continue;
                 }
+                const styleOptions = computeFeatureStyle(feature);
+
                 const properties = feature.properties || {};
                 let geometry = VectorLayerUtils.reprojectGeometry(feature.geometry, feature.crs || printCrs, printCrs);
+                if (feature.geometry.type === "LineString") {
+                    // Generate arrow heads
+                    if (styleOptions.headmarker) {
+                        VectorLayerUtils.generateMarkerGeometry(params, styleOptions.headmarker, false, feature, layer, dpi, printScale, printCrs, scaleFactor);
+                    }
+                    if (styleOptions.tailmarker) {
+                        VectorLayerUtils.generateMarkerGeometry(params, styleOptions.tailmarker, true, feature, layer, dpi, printScale, printCrs, scaleFactor);
+                    }
+                }
                 if (feature.geometry.type === "LineString" && !isEmpty(properties.segment_labels)) {
                     // Split line into single segments and label them individually
                     const coords = geometry.coordinates;
@@ -53,16 +66,17 @@ const VectorLayerUtils = {
                             type: "LineString",
                             coordinates: [coords[i], coords[i + 1]]
                         };
-                        params.styles.push(VectorLayerUtils.createSld(segment.type, feature.styleName, feature.styleOptions, layer.opacity, dpi, scaleFactor));
+                        params.styles.push(VectorLayerUtils.createSld(segment.type, feature.styleName, styleOptions, layer.opacity, dpi, scaleFactor));
                         params.labels.push(properties.segment_labels[i] || " ");
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(segment, printCrs === "EPSG:4326" ? 4 : 2));
-                        params.labelFillColors.push(defaultFeatureStyle.textFill);
-                        params.labelOultineColors.push(defaultFeatureStyle.textStroke);
+                        params.labelFillColors.push(styleOptions.textFill);
+                        params.labelOultineColors.push(styleOptions.textStroke);
                         params.labelOutlineSizes.push(scaleFactor);
                         params.labelSizes.push(Math.round(10 * scaleFactor));
+                        params.labelDist.push("-5");
                     }
                 } else {
-                    params.styles.push(VectorLayerUtils.createSld(geometry.type, feature.styleName, feature.styleOptions, layer.opacity, dpi, scaleFactor));
+                    params.styles.push(VectorLayerUtils.createSld(geometry.type, feature.styleName, styleOptions, layer.opacity, dpi, scaleFactor));
                     params.labels.push(properties.label || " ");
                     if (feature.styleName === "text") {
                         // Make point a tiny square, so that QGIS server centers the text inside the polygon when labelling
@@ -79,21 +93,50 @@ const VectorLayerUtils = {
                             ]]
                         };
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
-                        params.labelFillColors.push(ensureHex(feature.styleOptions.fillColor));
-                        params.labelOultineColors.push(ensureHex(feature.styleOptions.strokeColor));
-                        params.labelOutlineSizes.push(scaleFactor * feature.styleOptions.strokeWidth * 0.5);
-                        params.labelSizes.push(Math.round(10 * feature.styleOptions.strokeWidth * scaleFactor));
+                        params.labelFillColors.push(ensureHex(styleOptions.fillColor));
+                        params.labelOultineColors.push(ensureHex(styleOptions.strokeColor));
+                        params.labelOutlineSizes.push(scaleFactor * styleOptions.strokeWidth * 0.5);
+                        params.labelSizes.push(Math.round(10 * styleOptions.strokeWidth * scaleFactor));
+                        params.labelDist.push("5");
                     } else {
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
-                        params.labelFillColors.push(defaultFeatureStyle.textFill);
-                        params.labelOultineColors.push(defaultFeatureStyle.textStroke);
+                        params.labelFillColors.push(styleOptions.textFill);
+                        params.labelOultineColors.push(styleOptions.textStroke);
                         params.labelOutlineSizes.push(scaleFactor);
                         params.labelSizes.push(Math.round(10 * scaleFactor));
+                        params.labelDist.push("-5");
                     }
                 }
             }
         }
         return params;
+    },
+    validateGeometry(geometry) {
+        if (!geometry) {
+            return false;
+        }
+        if (geometry.type === "Point") {
+            return !isEmpty(geometry.coordinates);
+        }
+        const removeDuplicates = (coordinates) => {
+            if (Array.isArray(coordinates[0][0])) {
+                return coordinates.map(removeDuplicates);
+            } else {
+                return coordinates.filter((item, pos, arr) => {
+                    return pos === 0 || item[0] !== arr[pos - 1][0] || item[1] !== arr[pos - 1][1];
+                });
+            }
+        };
+        const cleanCoordinates = removeDuplicates(geometry.coordinates);
+        const minLength = geometry.type.endsWith("LineString") ? 2 : 3;
+        const isDegenerate = (coordinates) => {
+            if (Array.isArray(coordinates[0][0])) {
+                return coordinates.map(isDegenerate).find(entry => entry === false);
+            } else {
+                return coordinates.length < minLength;
+            }
+        };
+        return !isDegenerate(cleanCoordinates);
     },
     createSld(geometrytype, styleName, styleOptions, layerOpacity, dpi = 96, scaleFactor = 1.0) {
         let opts = {};
@@ -113,7 +156,7 @@ const VectorLayerUtils = {
             };
         } else {
             // Default style
-            opts = {...ConfigUtils.getConfigProp("defaultFeatureStyle"), ...styleOptions};
+            opts = styleOptions;
         }
         const dpiScale = dpi / 96 * scaleFactor;
 
@@ -176,6 +219,69 @@ const VectorLayerUtils = {
                    '</StyledLayerDescriptor>';
         }
         return null;
+    },
+    generateMarkerGeometry(params, markername, tail, feature, layer, dpi, mapScale, printCrs, scaleFactor) {
+        if (!END_MARKERS[markername]) {
+            return;
+        }
+        const marker = END_MARKERS[markername];
+        // Read the SVG and generate a matching WKT geometry for the marker
+        let path = '';
+        let width = 0;
+        let height = 0;
+        try {
+            const parser = new DOMParser();
+            const svgSrc = atob(marker.src.slice(26));
+            const svgDoc = parser.parseFromString(svgSrc, "text/xml");
+            width = parseInt(svgDoc.getElementsByTagName("svg")[0].getAttribute("width"), 10);
+            height = parseInt(svgDoc.getElementsByTagName("svg")[0].getAttribute("height"), 10);
+            path = svgDoc.getElementsByTagName("path")[0].getAttribute("d");
+        } catch (e) {
+            /* eslint-disable-next-line */
+            console.warn("Could not parse path for marker " + markername);
+            return;
+        }
+        //                        [        Same as in FeatureStyles.js         ] [   pixel to map units  ]
+        const markerScaleFactor = 0.125 * (1 + feature.styleOptions.strokeWidth) / dpi * 0.0254 * mapScale * scaleFactor;
+        const origin = feature.geometry.coordinates[tail ? feature.geometry.coordinates.length - 1 : 0];
+        const p2 = feature.geometry.coordinates[tail ? feature.geometry.coordinates.length - 2 : 1];
+        const coordinates = [];
+        const angle = 0.5 * Math.PI + Math.atan2(origin[0] - p2[0], origin[1] - p2[1]);
+        const alpha = marker.baserotation / 180 * Math.PI + angle;
+        const cosa = Math.cos(alpha);
+        const sina = Math.sin(alpha);
+        svgpath(path).iterate((segment, index, x, y) => {
+            // Skip move instructions
+            if (["m", "M"].includes(segment[0])) {
+                return;
+            }
+            const dx = (x - marker.anchor[0] * width) * markerScaleFactor;
+            const dy = (y - marker.anchor[1] * height) * markerScaleFactor;
+            const rx = cosa * dx + sina * dy;
+            const ry = -sina * dx + cosa * dy;
+            coordinates.push([origin[0] + rx, origin[1] + ry]);
+        });
+        // Closing coordinate
+        coordinates.push(coordinates[0]);
+        const geometry = {
+            type: "Polygon",
+            coordinates: [coordinates]
+        };
+        const styleOptions = {
+            strokeWidth: 1,
+            strokeDash: [],
+            strokeColor: feature.styleOptions.strokeColor,
+            fillColor: feature.styleOptions.strokeColor
+        };
+
+        params.styles.push(VectorLayerUtils.createSld(geometry.type, "default", styleOptions, layer.opacity, dpi, scaleFactor));
+        params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
+        params.labels.push(" ");
+        params.labelFillColors.push("#FFF");
+        params.labelOultineColors.push("#FFF");
+        params.labelOutlineSizes.push(scaleFactor);
+        params.labelSizes.push(Math.round(10 * scaleFactor));
+        params.labelDist.push("0");
     },
     reprojectGeometry(geometry, srccrs, dstcrs) {
         if (srccrs === dstcrs || !srccrs || !dstcrs) {
@@ -274,7 +380,6 @@ const VectorLayerUtils = {
         const kmlFormat = new ol.format.KML({defaultStyle: [new ol.style.Style()]});
         const geojsonFormat = new ol.format.GeoJSON();
         const features = [];
-        let fid = 0;
         for (const olFeature of kmlFormat.readFeatures(kml)) {
             let style = olFeature.getStyleFunction()(olFeature);
             style = style[0] || style;
@@ -304,7 +409,7 @@ const VectorLayerUtils = {
             Object.assign(feature, {
                 styleName: styleOptions.iconSrc ? 'marker' : 'default',
                 styleOptions: styleOptions,
-                id: fid++,
+                id: uuidv1(),
                 crs: "EPSG:4326",
                 properties: {}
             });

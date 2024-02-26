@@ -1,5 +1,5 @@
 /**
- * Copyright 2018-2021 Sourcepole AG
+ * Copyright 2018-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -199,7 +199,7 @@ class MapInfoTooltip extends React.Component {
                             </tbody>
                         </table>
                         {routingButtons}
-                        {this.props.plugins.map((Plugin, idx) => (<Plugin key={idx} point={this.state.point} closePopup={this.clear} />))}
+                        {this.props.plugins.map((Plugin, idx) => (<Plugin key={idx} point={this.state.point} closePopup={this.clear} projection={this.props.map.projection} />))}
                     </div>
                 </div>
             </div>
@@ -214,6 +214,6 @@ export default (plugins) => {
         displaycrs: displaycrs,
         plugins: plugins
     })), {
-        setCurrentTask: setCurrentTask 
+        setCurrentTask: setCurrentTask
     })(MapInfoTooltip);
 };

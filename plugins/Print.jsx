@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -51,6 +51,8 @@ class Print extends React.Component {
         defaultScaleFactor: PropTypes.number,
         /** Whether to display the map rotation control. */
         displayRotation: PropTypes.bool,
+        /** Export layout format mimetypes. If empty, supported formats are listed. If format is not supported by QGIS Server, print will fail */
+        formats: PropTypes.arrayOf(PropTypes.string),
         /** Whether the grid is enabled by default. */
         gridInitiallyEnabled: PropTypes.bool,
         /** Whether to hide form fields which contain autopopulated values (i.e. search result label). */
@@ -91,7 +93,10 @@ class Print extends React.Component {
         outputLoaded: false,
         printing: false,
         atlasFeatures: [],
-        geoPdf: false
+        geoPdf: false,
+        availableFormats: [],
+        selectedFormat: "",
+        printOutputData: undefined
     };
     constructor(props) {
         super(props);
@@ -102,7 +107,10 @@ class Print extends React.Component {
     componentDidUpdate(prevProps, prevState) {
         if (prevProps.theme !== this.props.theme) {
             if (this.props.theme && !isEmpty(this.props.theme.print)) {
-                const layout = this.props.theme.print.filter(l => l.map).find(l => l.default) || this.props.theme.print[0];
+                const layouts = this.props.theme.print.filter(l => l.map).sort((a, b) => {
+                    return a.name.localeCompare(b.name, undefined, {numeric: true});
+                });
+                const layout = layouts.find(l => l.default) || layouts[0];
                 this.setState({layout: layout, atlasFeatures: []});
             } else {
                 this.setState({layout: null, atlasFeatures: []});
@@ -117,12 +125,15 @@ class Print extends React.Component {
                     skipPrint: true
                 };
                 this.props.addLayerFeatures(layer, this.state.atlasFeatures, true);
-            } else {
+            } else if (!isEmpty(prevState.atlasFeatures)) {
                 this.props.clearLayer("print-pick-selection");
             }
         }
     }
     onShow = () => {
+        const defaultFormats = ['application/pdf', 'image/jpeg', 'image/png', 'image/svg'];
+        const availableFormats = !isEmpty(this.props.formats) ? this.props.formats : defaultFormats;
+        const selectedFormat = availableFormats[0];
         let scale = Math.round(MapUtils.computeForZoom(this.props.map.scales, this.props.map.zoom) * this.props.defaultScaleFactor);
         if (this.props.theme.printScales && this.props.theme.printScales.length > 0) {
             let closestVal = Math.abs(scale - this.props.theme.printScales[0]);
@@ -136,7 +147,13 @@ class Print extends React.Component {
             }
             scale = this.props.theme.printScales[closestIdx];
         }
-        this.setState({scale: scale, initialRotation: this.props.map.bbox.rotation, dpi: this.props.defaultDpi});
+        this.setState({
+            scale: scale,
+            initialRotation: this.props.map.bbox.rotation,
+            dpi: this.props.defaultDpi,
+            availableFormats: availableFormats,
+            selectedFormat: selectedFormat
+        });
     };
     onHide = () => {
         this.props.changeRotation(this.state.initialRotation);
@@ -207,7 +224,7 @@ class Print extends React.Component {
 
         const labels = this.state.layout && this.state.layout.labels ? this.state.layout.labels : [];
 
-        const highlightParams = VectorLayerUtils.createPrintHighlighParams(this.props.layers, mapCrs, printDpi, this.props.scaleFactor);
+        const highlightParams = VectorLayerUtils.createPrintHighlighParams(this.props.layers, mapCrs, this.state.scale, printDpi, this.props.scaleFactor);
 
         const dimensionValues = this.props.layers.reduce((res, layer) => {
             if (layer.role === LayerRole.THEME) {
@@ -221,12 +238,22 @@ class Print extends React.Component {
         }, {});
 
         const extraOptions = Object.fromEntries((this.props.theme.extraPrintParameters || "").split("&").map(entry => entry.split("=")));
+        const layouts = this.props.theme.print.filter(l => l.map).sort((a, b) => {
+            return a.name.localeCompare(b.name, undefined, {numeric: true});
+        });
+
+        const formatMap = {
+            "application/pdf": "PDF",
+            "image/jpeg": "JPEG",
+            "image/png": "PNG",
+            "image/svg": "SVG"
+        };
+        const selectedFormat = this.state.selectedFormat;
 
         return (
             <div className="print-body">
                 <form action={this.props.theme.printUrl} method="POST"
                     onSubmit={this.print} ref={el => { this.printForm = el; }}
-                    target="print-output-window"
                 >
                     <input name="TEMPLATE" type="hidden" value={printLegend && this.state.legend ? printLegend : this.state.layout.name} />
                     <table className="options-table"><tbody>
@@ -234,14 +261,26 @@ class Print extends React.Component {
                             <td>{LocaleUtils.tr("print.layout")}</td>
                             <td>
                                 <select onChange={this.changeLayout} value={this.state.layout.name}>
-                                    {this.props.theme.print.filter(l => l.map).map(item => {
+                                    {layouts.filter(l => l.map).map(item => {
                                         return (
-                                            <option key={item.name} value={item.name}>{item.name}</option>
+                                            <option key={item.name} value={item.name}>{item.name.split('/').pop()}</option>
                                         );
                                     })}
                                 </select>
                             </td>
                         </tr>
+                        {this.state.availableFormats.length > 1 ? (
+                            <tr>
+                                <td>{LocaleUtils.tr("print.format")}</td>
+                                <td>
+                                    <select name="FORMAT" onChange={this.formatChanged} value={this.state.selectedFormat}>
+                                        {this.state.availableFormats.map(format => {
+                                            return (<option key={format} value={format}>{formatMap[format] || format}</option>);
+                                        })}
+                                    </select>
+                                </td>
+                            </tr>
+                        ) : null}
                         {this.state.layout.atlasCoverageLayer ? (
                             <tr>
                                 <td>{LocaleUtils.tr("print.atlasfeature")}</td>
@@ -313,13 +352,14 @@ class Print extends React.Component {
                             if (label.startsWith("__")) {
                                 return null;
                             }
-                            const opts = {rows: 1, name: label.toUpperCase()};
-                            if (this.props.theme.printLabelConfig) {
-                                Object.assign(opts, this.props.theme.printLabelConfig[label]);
-                            }
+                            const opts = {
+                                rows: 1,
+                                name: label.toUpperCase(),
+                                ...this.props.theme.printLabelConfig?.[label]
+                            };
                             return this.renderPrintLabelField(label, opts);
                         })}
-                        {this.props.allowGeoPdfExport ? (
+                        {selectedFormat === "application/pdf" && this.props.allowGeoPdfExport ? (
                             <tr>
                                 <td>GeoPDF</td>
                                 <td>
@@ -334,12 +374,14 @@ class Print extends React.Component {
                         <input name="SERVICE" readOnly type={formvisibility} value="WMS" />
                         <input name="VERSION" readOnly type={formvisibility} value={version} />
                         <input name="REQUEST" readOnly type={formvisibility} value="GetPrint" />
-                        <input name="FORMAT" readOnly type={formvisibility} value="pdf" />
+                        <input name="FORMAT" readOnly type={formvisibility} value={selectedFormat} />
                         <input name="TRANSPARENT" readOnly type={formvisibility} value="true" />
                         <input name="SRS" readOnly type={formvisibility} value={mapCrs} />
                         {Object.entries(printParams).map(([key, value]) => (<input key={key} name={key} type={formvisibility} value={value} />))}
                         <input name="CONTENT_DISPOSITION" readOnly type={formvisibility} value={this.props.inlinePrintOutput ? "inline" : "attachment"} />
                         <input name={mapName + ":LAYERS"} readOnly type={formvisibility} value={printParams.LAYERS} />
+                        <input name={mapName + ":STYLES"} readOnly type={formvisibility} value={printParams.STYLES} />
+                        <input name={mapName + ":FILTER"} readOnly type={formvisibility} value={printParams.FILTER} />
                         <input name={mapName + ":HIGHLIGHT_GEOM"} readOnly type={formvisibility} value={highlightParams.geoms.join(";")} />
                         <input name={mapName + ":HIGHLIGHT_SYMBOL"} readOnly type={formvisibility} value={highlightParams.styles.join(";")} />
                         <input name={mapName + ":HIGHLIGHT_LABELSTRING"} readOnly type={formvisibility} value={highlightParams.labels.join(";")} />
@@ -347,7 +389,8 @@ class Print extends React.Component {
                         <input name={mapName + ":HIGHLIGHT_LABELBUFFERCOLOR"} readOnly type={formvisibility} value={highlightParams.labelOultineColors.join(";")} />
                         <input name={mapName + ":HIGHLIGHT_LABELBUFFERSIZE"} readOnly type={formvisibility} value={highlightParams.labelOutlineSizes.join(";")} />
                         <input name={mapName + ":HIGHLIGHT_LABELSIZE"} readOnly type={formvisibility} value={highlightParams.labelSizes.join(";")} />
-                        {this.props.allowGeoPdfExport  ? (<input name="FORMAT_OPTIONS" readOnly type={formvisibility} value={this.state.geoPdf ? "WRITE_GEO_PDF:true" : "WRITE_GEO_PDF:false"} />) : null}
+                        <input name={mapName + ":HIGHLIGHT_LABEL_DISTANCE"} readOnly type={formvisibility} value={highlightParams.labelDist.join(";")} />
+                        {selectedFormat === "application/pdf" && this.props.allowGeoPdfExport  ? (<input name="FORMAT_OPTIONS" readOnly type={formvisibility} value={this.state.geoPdf ? "WRITE_GEO_PDF:true" : "WRITE_GEO_PDF:false"} />) : null}
                         {gridIntervalX}
                         {gridIntervalY}
                         {resolutionInput}
@@ -366,46 +409,50 @@ class Print extends React.Component {
         );
     };
     renderPrintLabelField = (label, opts) => {
-        if (this.props.theme.printLabelForSearchResult === label) {
-            if (this.props.hideAutopopulatedFields) {
-                return (<tr key={"label." + label}><td colSpan="2"><input defaultValue={this.getSearchMarkerLabel()} name={opts.name} type="hidden" /></td></tr>);
-            } else {
-                return (
-                    <tr key={"label." + label}>
-                        <td>{MiscUtils.capitalizeFirst(label)}</td>
-                        <td><textarea {...opts} defaultValue={this.getSearchMarkerLabel()} readOnly /></td>
-                    </tr>
-                );
-            }
-        } else if (this.props.theme.printLabelForAttribution === label) {
-            if (this.props.hideAutopopulatedFields) {
-                return (<tr key={"label." + label}><td colSpan="2"><input defaultValue={this.getAttributionLabel()} name={opts.name} type="hidden" /></td></tr>);
-            } else {
-                return (
-                    <tr key={"label." + label}>
-                        <td>{MiscUtils.capitalizeFirst(label)}</td>
-                        <td><textarea {...opts} defaultValue={this.getAttributionLabel()} readOnly /></td>
-                    </tr>
-                );
-            }
+        let defaultValue = opts.defaultValue || "";
+        let autopopulated = false;
+        if (label === this.props.theme.printLabelForSearchResult) {
+            defaultValue = this.getSearchMarkerLabel();
+            autopopulated = true;
+        } else if (label === this.props.theme.printLabelForAttribution) {
+            defaultValue = this.getAttributionLabel();
+            autopopulated = true;
+        }
+        if (autopopulated && this.props.hideAutopopulatedFields) {
+            return (<tr key={"label." + label}><td colSpan="2"><input defaultValue={defaultValue} name={opts.name} type="hidden" /></td></tr>);
         } else {
-            return (
-                <tr key={"label." + label}>
-                    <td>{MiscUtils.capitalizeFirst(label)}</td>
-                    <td><textarea {...opts}/></td>
-                </tr>
-            );
+            if (opts.options) {
+                return (
+                    <tr key={"label." + label}>
+                        <td>{MiscUtils.capitalizeFirst(label)}</td>
+                        <td>
+                            <select defaultValue={defaultValue} name={opts.name}>
+                                {opts.options.map(value => (<option key={value} value={value}>{value}</option>))}
+                            </select>
+                        </td>
+                    </tr>
+                );
+            } else {
+                const style = {};
+                if (opts.rows || opts.cols) {
+                    style.resize = 'none';
+                }
+                if (opts.rows) {
+                    style.width = 'initial';
+                }
+                return (
+                    <tr key={"label." + label}>
+                        <td>{MiscUtils.capitalizeFirst(label)}</td>
+                        <td><textarea {...opts} defaultValue={defaultValue} readOnly={autopopulated} style={style} /></td>
+                    </tr>
+                );
+            }
         }
     };
     getSearchMarkerLabel = () => {
         const searchsellayer = this.props.layers.find(layer => layer.id === "searchselection");
-        if (searchsellayer && searchsellayer.features) {
-            const feature = searchsellayer.features.find(f => f.id === "searchmarker");
-            if (feature && feature.properties) {
-                return feature.properties.label;
-            }
-        }
-        return "";
+        const feature = (searchsellayer?.features || []).find(f => f.id === "searchmarker");
+        return feature?.properties?.label || "";
     };
     getAttributionLabel = () => {
         const copyrights = this.props.layers.reduce((res, layer) => ({...res, ...LayerUtils.getAttribution(layer, this.props.map)}), {});
@@ -443,7 +490,7 @@ class Print extends React.Component {
                             <Spinner /> {LocaleUtils.tr("print.wait")}
                         </span>
                     ) : null}
-                    <iframe name="print-output-window" onLoad={() => this.setState({outputLoaded: true})}/>
+                    <iframe name="print-output-window" onLoad={() => this.setState({outputLoaded: true})} src={this.state.pdfData}/>
                 </div>
             </ResizeableWindow>
         );
@@ -523,6 +570,9 @@ class Print extends React.Component {
             this.props.changeRotation(angle / 180 * Math.PI);
         }
     };
+    formatChanged = (ev) => {
+        this.setState({selectedFormat: ev.target.value});
+    };
     computeCurrentExtent = () => {
         if (!this.props.map || !this.state.layout || !this.state.scale) {
             return [0, 0, 0, 0];
@@ -540,31 +590,37 @@ class Print extends React.Component {
     print = (ev) => {
         if (this.props.inlinePrintOutput) {
             this.setState({printOutputVisible: true, outputLoaded: false});
-        } else {
-            ev.preventDefault();
-            this.setState({printing: true});
-            const formData = formDataEntries(new FormData(this.printForm));
-            const data = Object.entries(formData).map((pair) =>
-                pair.map(entry => encodeURIComponent(entry).replace(/%20/g, '+')).join("=")
-            ).join("&");
-            const config = {
-                headers: {'Content-Type': 'application/x-www-form-urlencoded' },
-                responseType: "arraybuffer"
-            };
-            axios.post(this.props.theme.printUrl, data, config).then(response => {
-                this.setState({printing: false});
-                const contentType = response.headers["content-type"];
-                FileSaver.saveAs(new Blob([response.data], {type: contentType}), this.props.theme.name + '.pdf');
-            }).catch(e => {
-                this.setState({printing: false});
-                if (e.response) {
-                    /* eslint-disable-next-line */
-                    console.log(new TextDecoder().decode(e.response.data));
-                }
-                /* eslint-disable-next-line */
-                alert('Print failed');
-            });
         }
+        ev.preventDefault();
+        this.setState({printing: true});
+        const formData = formDataEntries(new FormData(this.printForm));
+        const data = Object.entries(formData).map((pair) =>
+            pair.map(entry => encodeURIComponent(entry).replace(/%20/g, '+')).join("=")
+        ).join("&");
+        const config = {
+            headers: {'Content-Type': 'application/x-www-form-urlencoded' },
+            responseType: "arraybuffer"
+        };
+        axios.post(this.props.theme.printUrl, data, config).then(response => {
+            this.setState({printing: false});
+            const contentType = response.headers["content-type"];
+            const file = new Blob([response.data], { type: contentType });
+            if (this.props.inlinePrintOutput) {
+                const fileURL = URL.createObjectURL(file);
+                this.setState({ pdfData: fileURL, outputLoaded: true });
+            } else {
+                const ext = this.state.selectedFormat.split(";")[0].split("/").pop();
+                FileSaver.saveAs(file, this.props.theme.name + '.' + ext);
+            }
+        }).catch(e => {
+            this.setState({printing: false});
+            if (e.response) {
+                /* eslint-disable-next-line */
+                console.log(new TextDecoder().decode(e.response.data));
+            }
+            /* eslint-disable-next-line */
+            alert('Print failed');
+        });
     };
 }
 

@@ -11,6 +11,7 @@ Plugin reference
 * [DxfExport](#dxfexport)
 * [Editing](#editing)
 * [FeatureForm](#featureform)
+* [FeatureSearch](#featuresearch)
 * [HeightProfile](#heightprofile)
 * [Help](#help)
 * [HomeButton](#homebutton)
@@ -22,11 +23,14 @@ Plugin reference
 * [MapPlugin](#mapplugin)
 * [MapComparePlugin](#mapcompareplugin)
 * [MapCopyright](#mapcopyright)
+* [MapExport](#mapexport)
+* [MapFilter](#mapfilter)
 * [MapInfoTooltip](#mapinfotooltip)
 * [MapLegend](#maplegend)
 * [MapTip](#maptip)
 * [Measure](#measure)
 * [NewsPopup](#newspopup)
+* [Portal](#portal)
 * [Print](#print)
 * [ProcessNotifications](#processnotifications)
 * [RasterExport](#rasterexport)
@@ -74,13 +78,23 @@ Convenience method for adding an external layer.
 
 `window.qwc2.drawScratch(geomType, message, drawMultiple, callback, style = null)`
 
- Draw scratch geometries, and return these as GeoJSON to the calling application.
+ Deprecated, use `window.qwc2.drawGeometry` instead.
+
+---
+
+`window.qwc2.drawGeometry(geomType, message, callback, options)`
+
+ Draw geometries, and return these as GeoJSON to the calling application.
 
   * `geomType`: `Point`, `LineString`, `Polygon`, `Circle` or `Box`.
   * `message`: A descriptive string to display in the tool taskbar.
-  * `drawMultiple`: Whether to allow drawing multiple geometries.
   * `callback`: A `function(result, crs)`, the `result` being an array of GeoJSON features, and `crs` the projection of the feature coordinates.
-  * `style`: Optional, a custom style object to use for the drawn features, in the same format as `DEFAULT_FEATURE_STYLE` in `qwc2/utils/FeatureStyles.js`.
+  * `options`: Optional configuration:
+        `drawMultiple`: Whether to allow drawing multiple geometries (default: `false`).
+        `style`: A custom style object to use for the drawn features, in the same format as `DEFAULT_FEATURE_STYLE` in `qwc2/utils/FeatureStyles.js`.
+        `initialFeatures`: Array of initial geometries.
+        `snapping`: Whether snapping is available while drawing (default: `false`).
+        `snappingActive`: Whether snapping is initially active (default: `false`)
 
 ---
 
@@ -151,9 +165,11 @@ Bottom bar, displaying mouse coordinate, scale, etc.
 | displayCoordinates | `bool` | Whether to display the coordinates in the bottom bar. | `true` |
 | displayScales | `bool` | Whether to display the scale in the bottom bar. | `true` |
 | termsUrl | `string` | The URL of the terms label anchor. | `undefined` |
-| termsUrlTarget | `string` | The target where to open the terms URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. | `undefined` |
+| termsUrlIcon | `string` | Icon of the terms inline window. Relevant only when `termsUrlTarget` is `iframe`. | `undefined` |
+| termsUrlTarget | `string` | The target where to open the terms URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. You can also use the `:iframedialog:<dialogname>:<options>` syntax to set up the inline window. | `undefined` |
 | viewertitleUrl | `string` | The URL of the viewer title label anchor. | `undefined` |
-| viewertitleUrlTarget | `string` | The target where to open the viewer title URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. | `undefined` |
+| viewertitleUrlIcon | `string` | Icon of the viewer title inline window. Relevant only when `viewertitleUrl` is `iframe`. | `undefined` |
+| viewertitleUrlTarget | `string` | The target where to open the viewer title URL. If `iframe`, it will be displayed in an inline window, otherwise in a new tab. You can also use the `:iframedialog:<dialogname>:<options>` syntax to set up the inline window. | `undefined` |
 
 Cyclomedia<a name="cyclomedia"></a>
 ----------------------------------------------------------------
@@ -165,7 +181,7 @@ Cyclomedia integration for QWC2.
 | clientId | `string` | OAuth client ID. | `undefined` |
 | cyclomediaVersion | `string` | The cyclomedia version. | `'23.6'` |
 | displayMeasurements | `bool` | Whether to display Cyclomedia measurement geometries on the map. | `true` |
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 480,`<br />`    initialHeight: 640,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false`<br />`}` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 480,`<br />`    initialHeight: 640,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
 | loginRedirectUri | `string` | The relative path to the redirect login handling of oauth. | `undefined` |
 | logoutRedirectUri | `string` | The relative path to the redirect logout handling of oauth. | `undefined` |
 | maxMapScale | `number` | The maximum map scale above which the recordings WFS won't be displayed. | `10000` |
@@ -176,6 +192,8 @@ DxfExport<a name="dxfexport"></a>
 Allows exporting a selected extent of the map as DXF.
 
 Uses the DXF format support of QGIS Server.
+
+Deprecated. Use the MapExport plugin instead.
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
@@ -197,7 +215,7 @@ This plugin queries the dataset via the editing service specified by
 | allowCloneGeometry | `bool` | Whether to enable the "Clone existing geometry" functionality. | `true` |
 | side | `string` | The side of the application on which to display the sidebar. | `'right'` |
 | snapping | `bool` | Whether snapping is available when editing. | `true` |
-| snappingActive | `bool` | Whether snapping is enabled by default when editing. | `true` |
+| snappingActive | `{bool, string}` | Whether snapping is enabled by default when editing.<br /> Either `false`, `edge`, `vertex` or `true` (i.e. both vertex and edge). | `true` |
 | width | `string` | The default width of the editing sidebar, as a CSS width string. | `"30em"` |
 
 FeatureForm<a name="featureform"></a>
@@ -217,7 +235,16 @@ Can be used as default identify tool by setting `"identifyTool": "FeatureForm"` 
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 480,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false`<br />`}` |
+| exitTaskOnResultsClose | `bool` | Whether to clear the task when the results window is closed. | `undefined` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 480,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
+
+FeatureSearch<a name="featuresearch"></a>
+----------------------------------------------------------------
+Displays a dialog with a search form for configured QGIS feature searches with one or more input fields.
+
+| Property | Type | Description | Default value |
+|----------|------|-------------|---------------|
+| side | `string` | The side of the application on which to display the sidebar. | `'right'` |
 
 HeightProfile<a name="heightprofile"></a>
 ----------------------------------------------------------------
@@ -227,11 +254,15 @@ Triggered automatically when a line is measured via the `Measure` plugin.
 
 Requires `elevationServiceUrl` in `config.json` to point to a `qwc-elevation-service`.
 
+The print height profile functionality requires a template located by default at `assets/templates/heightprofileprint.html`
+with containing a container element with `id=heightprofilecontainer`.
+
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
-| heighProfilePrecision | `number` | The precision of displayed and exported values (0: no decimals, 0.1: 1 decimal position, etc). | `0` |
-| height | `number` | The height of the height profile widget in pixels. | `100` |
+| height | `number` | The height of the height profile widget in pixels. | `150` |
+| heightProfilePrecision | `number` | The precision of displayed and exported values (0: no decimals, 1: 1 decimal position, etc). | `0` |
 | samples | `number` | The number of elevation samples to query. | `500` |
+| templatePath | `string` | Template location for the height profile print functionality | `":/templates/heightprofileprint.html"` |
 
 Help<a name="help"></a>
 ----------------------------------------------------------------
@@ -251,6 +282,8 @@ Map button for reverting to the home extent of the theme.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). | `5` |
+| themeFlagBlacklist | `[string]` | Omit the button in themes matching one of these flags. | `undefined` |
+| themeFlagWhitelist | `[string]` | Only show the button in themes matching one of these flags. | `undefined` |
 
 Identify<a name="identify"></a>
 ----------------------------------------------------------------
@@ -270,9 +303,13 @@ for customized queries and templates for the result presentation.
 | clearResultsOnClose | `bool` | Whether to clear the identify results when exiting the identify tool. | `true` |
 | customExporters | `array` | Optional list of custom exporters to offer along with the built-in exporters. See js/IdentifyExtensions.js for details. This prop can be specified in the appConfig.js cfg section. | `[]` |
 | displayResultTree | `bool` | Whether to display a tree overview of results (as opposed to a flat list of results). | `true` |
-| enableExport | `bool` | Whether to enable the export functionality. | `true` |
+| enableExport | `{bool, array}` | Whether to enable the export functionality. Either `true|false` or a list of single allowed formats (builtin formats: `json`, `geojson`, `csv`, `csvzip`) | `true` |
+| exitTaskOnResultsClose | `bool` | Whether to clear the task when the results window is closed. | `undefined` |
+| exportGeometry | `bool` | Whether to include the geometry in exported features. Default: `true`. | `true` |
 | featureInfoReturnsLayerName | `bool` | Whether to assume that XML GetFeatureInfo responses specify the technical layer name in the `name` attribute, rather than the layer title. | `true` |
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 240,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false`<br />`}` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 240,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
+| highlightAllResults | `bool` | Whether to highlight all results if no result is hovered | `true` |
+| initialRadiusUnits | `string` | The initial radius units of the identify dialog in radius mode. One of 'meters', 'feet', 'kilometers', 'miles'. | `'meters'` |
 | replaceImageUrls | `bool` | Whether to replace an attribute value containing an URL to an image with an inline image. | `true` |
 
 LayerCatalog<a name="layercatalog"></a>
@@ -281,13 +318,17 @@ Displays a pre-configured catalog of external layers in a window.
 
 Configured through a catalog JSON containing a tree of external layer identifiers.
 
+For `wms` layers, `sublayers: false` denotes that the sublayer structure of the added layer should not
+be exposed in the layer tree.
+
 Example:
 ```json
 {
   "catalog": [
     {
-      "title": "Bauzonen",
-      "resource": "wms:http://wms.geo.admin.ch#ch.are.bauzonen"
+      "title": "Öffentlicher Verkehr swissTLMRegio",
+      "resource": "wms:http://wms.geo.admin.ch#ch.swisstopo.vec200-transportation-oeffentliche-verkehr",
+      "sublayers": false
     },
     {
       "title": "Gewässerschutz",
@@ -313,11 +354,15 @@ Example:
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | catalogUrl | `string` | The URL to the catalog JSON file. | `undefined` |
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false`<br />`}` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
+| levelBasedIndentSize | `bool` | Whether to increase the indent size dynamically according to the current level (`true`) or keep the indent size constant (`false`). | `true` |
 
 LayerTree<a name="layertree"></a>
 ----------------------------------------------------------------
 Displays the map layer tree in a sidebar.
+
+The print legend functionality requires a template located by default at assets/templates/legendprint.html
+with containing a container element with id=legendcontainer.
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
@@ -325,6 +370,7 @@ Displays the map layer tree in a sidebar.
 | allowCompare | `bool` | Whether to enable the compare function. Requires the `MapCompare` plugin. | `true` |
 | allowImport | `bool` | Whether to allow importing external layers. | `true` |
 | allowMapTips | `bool` | Whether to allow enabling map tips. | `true` |
+| allowSelectIdentifyableLayers | `bool` | Whether to allow selection of identifyable layers. The `showQueryableIcon` property should be `true` to be able to select identifyable layers. | `false` |
 | bboxDependentLegend | `{bool, string}` | Whether to display a BBOX dependent legend. Can be `true|false|"theme"`, latter means only for theme layers. | `false` |
 | enableLegendPrint | `bool` | Whether to enable the legend print functionality. | `true` |
 | enableServiceInfo | `bool` | Whether to display a service info button to display the WMS service metadata. | `true` |
@@ -335,13 +381,13 @@ Displays the map layer tree in a sidebar.
 | groupTogglesSublayers | `bool` | Whether toggling a group also toggles all sublayers. | `false` |
 | infoInSettings | `bool` | Whether to display the layer info button inside the layer settings menu rather than next to the layer title. | `true` |
 | layerInfoGeometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default layer info window geometry with size, position and docking status. | `{`<br />`    initialWidth: 480,`<br />`    initialHeight: 480,`<br />`    initialX: null,`<br />`    initialY: null,`<br />`    initiallyDocked: false`<br />`}` |
-| mapTipsEnabled | `bool` | Whether map tips are enabled by default. | `undefined` |
 | scaleDependentLegend | `{bool, string}` | Whether to display a scale dependent legend. Can be `true|false|"theme"`, latter means only for theme layers. | `undefined` |
 | showLegendIcons | `bool` | Whether to display legend icons. | `true` |
 | showQueryableIcon | `bool` | Whether to display the queryable icon to indicate that a layer is identifyable. | `true` |
 | showRootEntry | `bool` | Whether to display the root entry of the layertree. | `true` |
 | showToggleAllLayersCheckbox | `bool` | Whether to display a checkbox to toggle all layers. | `true` |
 | side | `string` | The side of the application on which to display the sidebar. | `'right'` |
+| templatePath | `string` | Template location for the legend print functionality | `":/templates/legendprint.html"` |
 | width | `string` | The initial width of the layertree, as a CSS width string. | `"25em"` |
 
 LocateButton<a name="locatebutton"></a>
@@ -351,6 +397,8 @@ Map button for controling the locate (GPS) state.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). | `2` |
+| themeFlagBlacklist | `[string]` | Omit the button in themes matching one of these flags. | `undefined` |
+| themeFlagWhitelist | `[string]` | Only show the button in themes matching one of these flags. | `undefined` |
 
 LoginUser<a name="loginuser"></a>
 ----------------------------------------------------------------
@@ -366,7 +414,7 @@ The main map component.
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
-| mapOptions | `{`<br />`  zoomDuration: number,`<br />`  enableRotation: bool,`<br />`  rotation: number,`<br />`  panStepSize: number,`<br />`  panPageSize: number,`<br />`}` | Zoom duration in ms, rotation in degrees, panStepSize and panPageSize as fraction of map width/height. | `{}` |
+| mapOptions | `{`<br />`  zoomDuration: number,`<br />`  enableRotation: bool,`<br />`  rotation: number,`<br />`  panStepSize: number,`<br />`  panPageSize: number,`<br />`  constrainExtent: bool,`<br />`  kineticPanParams: object,`<br />`}` | Zoom duration in ms, rotation in degrees, panStepSize and panPageSize as fraction of map width/height. | `{}` |
 | showLoading | `bool` | Whether to display the loading spinner when layers are loading. | `true` |
 | swipeGeometryTypeBlacklist | `[string]` | A list of layer geometry types to ignore when determining the top-most layer to compare. | `[]` |
 | swipeLayerNameBlacklist | `[string]` | A list of layer names to ignore when determining the top-most layer to compare. You can use `*` as a whildcard character. | `[]` |
@@ -390,6 +438,66 @@ Displays layer attributions in the bottom right corner of the map.
 |----------|------|-------------|---------------|
 | prefixCopyrightsWithLayerNames | `bool` | Whether to prepend the layer name to the attribution string. | `undefined` |
 | showThemeCopyrightOnly | `bool` | Whether to only display the attribution of the theme, omitting external layers. | `undefined` |
+
+MapExport<a name="mapexport"></a>
+----------------------------------------------------------------
+Allows exporting a selected portion of the map to a variety of formats.
+
+| Property | Type | Description | Default value |
+|----------|------|-------------|---------------|
+| allowedFormats | `[string]` | Whitelist of allowed export format mimetypes. If empty, supported formats are listed. | `undefined` |
+| allowedScales | `{[number], bool}` | List of scales at which to export the map. If empty, scale can be freely specified. If `false`, the map can only be exported at the current scale. | `undefined` |
+| defaultFormat | `string` | Default export format mimetype. If empty, first available format is used. | `undefined` |
+| defaultScaleFactor | `number` | The factor to apply to the map scale to determine the initial export map scale (if `allowedScales` is not `false`). | `0.5` |
+| dpis | `[number]` | List of dpis at which to export the map. If empty, the default server dpi is used. | `undefined` |
+| exportExternalLayers | `bool` | Whether to include external layers in the image. Requires QGIS Server 3.x! | `true` |
+| formatConfiguration | `{`<br />`  format: [{`<br />`  name: string,`<br />`  extraQuery: string,`<br />`  formatOptions: string,`<br />`  baseLayer: string,`<br />`}],`<br />`}` | Custom export configuration per format.<br /> If more than one configuration per format is provided, a selection combo will be displayed.<br /> `extraQuery` will be appended to the query string (replacing any existing parameters).<br /> `formatOptions` will be passed as FORMAT_OPTIONS.<br /> `baseLayer` will be appended to the LAYERS instead of the background layer. | `undefined` |
+| pageSizes | `[{`<br />`  name: string,`<br />`  width: number,`<br />`  height: number,`<br />`}]` | List of image sizes to offer, in addition to the free-hand selection. The width and height are in millimeters. | `[`<br />`    {name: '15 x 15 cm', width: 150, height: 150},`<br />`    {name: '30 x 30 cm', width: 300, height: 300}`<br />`]` |
+| side | `string` | The side of the application on which to display the sidebar. | `'right'` |
+
+MapFilter<a name="mapfilter"></a>
+----------------------------------------------------------------
+Allows exporting a selected portion of the map to a variety of formats.
+
+You can set predefined filter expressions for a theme item as follows:
+
+```json
+predefinedFilters: {
+    id: "<filter_id>",
+    title: "<filter_title>",
+    titlemsgid: "<filter_title_msgid>",
+    filter: {
+        "<layer>": <data_service_expression>
+    },
+    fields: {
+        id: "<value_id>",
+        title: "<value_title">,
+        titlemsgid: "<value_title_msgid">",
+        defaultValue: <default_value>,
+        inputConfig: {<input_field_opts>}
+    }
+}
+```
+You can set the startup filter configuration by specifying a `f` URL-parameter with a JSON-serialized string as follows:
+
+```
+f={"<filter_id>": {"<field_id>": <value>, ...}, ...}
+```
+
+To control the temporal filter, the filter ID is `__timefilter`, and the field IDs are `tmin` and `tmax`, with values an ISO date or datetime string (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS`).
+
+To control the spatial filter, the syntax is `"__geomfilter": <GeoJSON polygon coodinates array>`.
+
+Whenever an startup filter value is specified, the filter is automatically enabled.
+
+*Note*: When specifying `f`, you should also specify `t` as the startup filter configuraiton needs to match the filters of the desired theme.
+
+| Property | Type | Description | Default value |
+|----------|------|-------------|---------------|
+| allowFilterByGeom | `bool` | Whether to allow filter by geometry. Requires the filter_geom plugin from qwc-qgis-server-plugins, and the filter will only be applied to postgis layers. | `undefined` |
+| allowFilterByTime | `bool` | Whether to display the temporal filter if temporal dimensions are found. | `true` |
+| position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). Set to -1 to hide the button. | `5` |
+| side | `string` | The side of the application on which to display the sidebar. | `undefined` |
 
 MapInfoTooltip<a name="mapinfotooltip"></a>
 ----------------------------------------------------------------
@@ -431,15 +539,17 @@ Displays the map legend in a floating dialog.
 
 The user can toggle whether to display only layers which are enabled, visible in the current extent and/or visible at the current scale.
 
+See https://docs.qgis.org/3.28/en/docs/server_manual/services/wms.html#wms-getlegendgraphic for supported extra legend params.
+
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | addGroupTitles | `bool` | Whether to add group titles to the legend. | `false` |
 | addLayerTitles | `bool` | Whether to add layer titles to the legend. Note that often the legend image itself already contains the layer title. | `false` |
 | bboxDependentLegend | `bool` | Whether to display a BBOX-dependent legend by default. | `false` |
 | extraLegendParameters | `string` | Extra parameters to add to the GetLegendGraphics request. | `undefined` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
 | onlyVisibleLegend | `bool` | Whether to only include enabled layers in the legend by default. | `false` |
 | scaleDependentLegend | `bool` | Whether to display a scale-dependent legend by default. | `false` |
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false`<br />`}` |
 
 MapTip<a name="maptip"></a>
 ----------------------------------------------------------------
@@ -452,6 +562,7 @@ The map tip needs to be configured in QGIS Layer Properties &rarr; Display.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | layerFeatureCount | `number` | The maximum number of feature maptips to display for a single layer. | `5` |
+| showFeatureSelection | `bool` | Whether to show the maptip feature selection on the map or not | `true` |
 
 Measure<a name="measure"></a>
 ----------------------------------------------------------------
@@ -461,7 +572,7 @@ Allows measuring points/lines/areas on the map.
 |----------|------|-------------|---------------|
 | showMeasureModeSwitcher | `bool` | Whether to show the widget to switch between measure modes. | `true` |
 | snapping | `bool` | Whether snapping is available when editing. | `true` |
-| snappingActive | `bool` | Whether snapping is enabled by default when editing. | `true` |
+| snappingActive | `{bool, string}` | Whether snapping is enabled by default when editing.<br /> Either `false`, `edge`, `vertex` or `true` (i.e. both vertex and edge). | `true` |
 
 NewsPopup<a name="newspopup"></a>
 ----------------------------------------------------------------
@@ -475,6 +586,18 @@ revision is published (specified via newsRev prop).
 | newsDocument | `string` | URL to the news HTML document to display in the popup. | `undefined` |
 | newsRev | `string` | Revision of the document. | `undefined` |
 
+Portal<a name="portal"></a>
+----------------------------------------------------------------
+Displays a landing lage, consisting of a full-screen theme switcher and a configurable menu.
+
+| Property | Type | Description | Default value |
+|----------|------|-------------|---------------|
+| bottomBarLinks | `[{`<br />`  href: string,`<br />`  label: string,`<br />`  labelmsgid: string,`<br />`  target: string,`<br />`}]` | Links to show in the portal bottom bar | `undefined` |
+| logo | `string` | Name of a logo image below assets/img. | `undefined` |
+| menuItems | `array` | Portal menu items, in the same format as the TopBar menu items. | `[]` |
+| showMenuOnStartup | `bool` | Whether the menu should be visible on startup. | `undefined` |
+| topBarText | `string` | Portal title text to show in the top bar. | `undefined` |
+
 Print<a name="print"></a>
 ----------------------------------------------------------------
 Invokes QGIS Server WMS GetPrint to print the map to PDF.
@@ -487,6 +610,7 @@ Uses the print layouts defined in the QGIS project.
 | defaultDpi | `number` | The default print dpi. | `300` |
 | defaultScaleFactor | `number` | The factor to apply to the map scale to determine the initial print map scale. | `0.5` |
 | displayRotation | `bool` | Whether to display the map rotation control. | `true` |
+| formats | `[string]` | Export layout format mimetypes. If empty, supported formats are listed. If format is not supported by QGIS Server, print will fail | `undefined` |
 | gridInitiallyEnabled | `bool` | Whether the grid is enabled by default. | `false` |
 | hideAutopopulatedFields | `bool` | Whether to hide form fields which contain autopopulated values (i.e. search result label). | `undefined` |
 | inlinePrintOutput | `bool` | Whether to display the print output in an inline dialog instead triggering a download. | `false` |
@@ -508,6 +632,8 @@ RasterExport<a name="rasterexport"></a>
 ----------------------------------------------------------------
 Allows exporting a selected portion of the map to an image ("screenshot").
 
+Deprecated. Use the MapExport plugin instead.
+
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | allowedFormats | `[string]` | Whitelist of allowed export format mimetypes. If empty, supported formats are listed. | `undefined` |
@@ -527,7 +653,7 @@ Allows drawing figures and text labels on the map.
 |----------|------|-------------|---------------|
 | allowGeometryLabels | `bool` | Whether to allow labeling geometric figures. | `true` |
 | snapping | `bool` | Whether snapping is available when editing. | `true` |
-| snappingActive | `bool` | Whether snapping is enabled by default when editing. | `true` |
+| snappingActive | `{bool, string}` | Whether snapping is enabled by default when editing.<br /> Either `false`, `edge`, `vertex` or `true` (i.e. both vertex and edge). | `true` |
 
 Routing<a name="routing"></a>
 ----------------------------------------------------------------
@@ -539,7 +665,8 @@ Requites `routingServiceUrl` in `config.json` pointing to a Valhalla routing ser
 |----------|------|-------------|---------------|
 | enabledModes | `[string]` | List of enabled routing modes. | `["auto", "heavyvehicle", "transit", "bicycle", "pedestrian"]` |
 | enabledProviders | `[string]` | List of search providers to use for routing location search. | `["coordinates", "nominatim"]` |
-| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 640,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: true`<br />`}` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 320,`<br />`    initialHeight: 640,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: true,`<br />`    side: 'left'`<br />`}` |
+| showPinLabels | `bool` | Whether to label the routing waypoint pins with the route point number. | `true` |
 
 ScratchDrawing<a name="scratchdrawing"></a>
 ----------------------------------------------------------------
@@ -562,7 +689,8 @@ Allows configuring language and color scheme.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | colorSchemes | `[{`<br />`  title: string,`<br />`  titleMsgId: string,`<br />`  value: string,`<br />`}]` | List of available color schemes. Value is the css class name, title/titleMsgId the display name. | `[]` |
-| languages | `array` | List of available languages. Value is the lang code, title/titleMsgId the display name. | `[]` |
+| languages | `[{`<br />`  title: string,`<br />`  titleMsgId: string,`<br />`  value: string,`<br />`}]` | List of available languages. Value is the lang code, title/titleMsgId the display name. | `[]` |
+| showDefaultThemeSelector | `bool` | Whether to show a selector to set the default theme/bookmark (of a logged in user). | `true` |
 | side | `string` | The side of the application on which to display the sidebar. | `'right'` |
 
 Share<a name="share"></a>
@@ -598,6 +726,8 @@ Generic map button to launch a task.
 | mode | `string` | The task mode. | `undefined` |
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). | `1` |
 | task | `string` | The task name. | `undefined` |
+| themeFlagBlacklist | `[string]` | Omit the button in themes matching one of these flags. | `undefined` |
+| themeFlagWhitelist | `[string]` | Only show the button in themes matching one of these flags. | `undefined` |
 
 ThemeSwitcher<a name="themeswitcher"></a>
 ----------------------------------------------------------------
@@ -606,7 +736,9 @@ Theme switcher panel.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | collapsibleGroups | `bool` | Whether to allow collapsing theme groups. | `undefined` |
+| showDefaultThemeSelector | `bool` | Whether to show an icon to select the default theme/bookmark (of a logged in user). | `true` |
 | showLayerAfterChangeTheme | `bool` | Whether to show the LayerTree by default after switching the theme. | `false` |
+| showThemeFilter | `bool` | Wether to show the theme filter field in the top bar. * | `true` |
 | side | `string` | The side of the application on which to display the sidebar. | `'right'` |
 | themeLayersListWindowSize | `{`<br />`  width: number,`<br />`  height: number,`<br />`}` | The default window size for the theme layers dialog. | `{width: 400, height: 300}` |
 | width | `string` | Default width as a CSS string. | `"50%"` |
@@ -626,8 +758,9 @@ Allows controling the time dimension of temporal WMS layers.
 | defaultStepUnit | `string` | The default step unit for the temporal animation, one of `ms`, `s`, `m`, `d`, `M`, `y`, `10y`, `100y` | `"d"` |
 | defaultTimelineDisplay | `string` | The default timeline display mode. One of `hidden`, `minimal`, `features`, `layers`. | `undefined` |
 | defaultTimelineMode | `string` | The default timeline mode. One of `fixed`, `infinite`. | `"fixed"` |
+| geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 800,`<br />`    initialHeight: 320,`<br />`    initiallyDocked: true`<br />`}` |
 | markerConfiguration | `{`<br />`  markersAvailable: bool,`<br />`  gradient: [string],`<br />`  markerOffset: array,`<br />`  markerPins: bool,`<br />`}` | The feature marker configuration. | `{`<br />`    markersAvailable: true,`<br />`    gradient: ["#f7af7d", "#eacc6e", "#fef89a", "#c5e09b", "#a3d29c", "#7cc096", "#79c8c5", "#34afce"],`<br />`    markerOffset: [0, 0],`<br />`    markerPins: true`<br />`}` |
-| stepUnits | `[string]` | The available temporal anumation step units. | `["s", "m", "h", "d", "M", "y"]` |
+| stepUnits | `[string]` | The available temporal animation step units. | `["s", "m", "h", "d", "M", "y"]` |
 
 TopBar<a name="topbar"></a>
 ----------------------------------------------------------------
@@ -643,7 +776,7 @@ Top bar, containing the logo, searchbar, task buttons and app menu.
 | logoSrc | `string` | The logo image URL if a different source than the default assets/img/logo.<ext> and assets/img/logo-mobile.<ext> is desired. | `undefined` |
 | logoUrl | `string` | The hyperlink to open when the logo is clicked. | `undefined` |
 | menuItems | `array` | The menu items. Refer to the corresponding chapter of the viewer documentation and the sample config.json. | `[]` |
-| searchOptions | `object` | Options passed down to the search component. See the searchOption propType of the used search component. | `{}` |
+| searchOptions | `{`<br />`  allowSearchFilters: bool,`<br />`  hideResultLabels: bool,`<br />`  highlightStyle: {`<br />`  strokeColor: array,`<br />`  strokeWidth: number,`<br />`  strokeDash: array,`<br />`  fillColor: array,`<br />`},`<br />`  minScaleDenom: number,`<br />`  resultLimit: number,`<br />`  sectionsDefaultCollapsed: bool,`<br />`  showLayerAfterChangeTheme: bool,`<br />`  showProviderSelection: bool,`<br />`  showProvidersInPlaceholder: bool,`<br />`  providerSelectionAllowAll: bool,`<br />`  zoomToLayers: bool,`<br />`}` | Options passed down to the search component. | `{}` |
 | toolbarItems | `array` | The toolbar. Refer to the corresponding chapter of the viewer documentation and the sample config.json. | `[]` |
 | toolbarItemsShortcutPrefix | `string` | The keyboard shortcut prefix for triggering toolbar tasks. I.e. alt+shift. The task are then triggered by <prefix>+{1,2,3,...} for the 1st, 2nd, 3rd... toolbar icon. | `undefined` |
 
@@ -656,4 +789,6 @@ Two specific plugins exist: ZoomInPlugin and ZoomOutPlugin, which are instances 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). | `undefined` |
+| themeFlagBlacklist | `[string]` | Omit the button in themes matching one of these flags. | `undefined` |
+| themeFlagWhitelist | `[string]` | Only show the button in themes matching one of these flags. | `undefined` |
 

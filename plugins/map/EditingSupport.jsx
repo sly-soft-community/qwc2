@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -116,7 +116,7 @@ class EditingSupport extends React.Component {
                 }
                 return ol.events.condition.shiftKeyOnly(event) && ol.events.condition.singleClick(event);
             },
-            style: FeatureStyles.sketchInteraction(),
+            style: FeatureStyles.sketchInteraction()
         });
         modifyInteraction.on('modifyend', () => {
             this.commitCurrentFeature();
@@ -136,7 +136,7 @@ class EditingSupport extends React.Component {
         }
         const addZCoordinateIfNeeded = (entry) => Array.isArray(entry[0]) ? entry.map(addZCoordinateIfNeeded) : [...entry.slice(0, 2), 0];
         if (this.props.editContext.geomType.endsWith('Z')) {
-            feature.geometry.coordinates = feature.geometry.coordinates.map(addZCoordinateIfNeeded);
+            feature.geometry.coordinates = addZCoordinateIfNeeded(feature.geometry.coordinates);
         }
         this.props.setEditContext(this.props.editContext.id, {feature: feature, changed: true});
     };

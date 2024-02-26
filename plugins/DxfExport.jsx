@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -28,6 +28,8 @@ import './style/DxfExport.css';
  * Allows exporting a selected extent of the map as DXF.
  *
  * Uses the DXF format support of QGIS Server.
+ *
+ * Deprecated. Use the MapExport plugin instead.
  */
 class DxfExport extends React.Component {
     static propTypes = {
@@ -51,6 +53,9 @@ class DxfExport extends React.Component {
     constructor(props) {
         super(props);
         this.state.selectedLayers = !isEmpty(props.layerOptions) ? props.layerOptions[0].layers : "";
+
+        /* eslint-disable-next-line */
+        console.warn("The DxfExport plugin is deprecated. Use the MapExport plugin instead.");
     }
     renderBody = () => {
         const themeLayers = this.props.layers.filter(layer => layer.role === LayerRole.THEME);

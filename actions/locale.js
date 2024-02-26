@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,7 +12,7 @@ import localeReducer from '../reducers/locale';
 ReducerIndex.register("locale", localeReducer);
 
 import axios from 'axios';
-import {getLanguageCountries} from 'country-language';
+import {getLanguageCountries} from '@ladjs/country-language';
 import ConfigUtils from '../utils/ConfigUtils';
 import {UrlParams} from '../utils/PermaLinkUtils';
 import deepmerge from 'deepmerge';
@@ -35,20 +35,23 @@ export function loadLocale(defaultLangData, defaultLang = "") {
                     dispatch({
                         type: CHANGE_LOCALE,
                         locale: lang,
-                        messages: deepmerge(messages, overrideMessages)
+                        messages: deepmerge(messages, overrideMessages),
+                        fallbackMessages: defaultLangData.messages
                     });
                 }).catch(() => {
                     dispatch({
                         type: CHANGE_LOCALE,
                         locale: lang,
-                        messages: messages
+                        messages: messages,
+                        fallbackMessages: defaultLangData.messages
                     });
                 });
             } else {
                 dispatch({
                     type: CHANGE_LOCALE,
                     locale: lang,
-                    messages: messages
+                    messages: messages,
+                    fallbackMessages: defaultLangData.messages
                 });
             }
         }).catch((e) => {
@@ -66,20 +69,23 @@ export function loadLocale(defaultLangData, defaultLang = "") {
                         dispatch({
                             type: CHANGE_LOCALE,
                             locale: lang,
-                            messages: deepmerge(messages, overrideMessages)
+                            messages: deepmerge(messages, overrideMessages),
+                            fallbackMessages: defaultLangData.messages
                         });
                     }).catch(() => {
                         dispatch({
                             type: CHANGE_LOCALE,
                             locale: lang,
-                            messages: messages
+                            messages: messages,
+                            fallbackMessages: defaultLangData.messages
                         });
                     });
                 } else {
                     dispatch({
                         type: CHANGE_LOCALE,
                         locale: lang,
-                        messages: messages
+                        messages: messages,
+                        fallbackMessages: defaultLangData.messages
                     });
                 }
             }).catch((e2) => {
@@ -88,7 +94,8 @@ export function loadLocale(defaultLangData, defaultLang = "") {
                 dispatch({
                     type: CHANGE_LOCALE,
                     locale: defaultLangData.locale,
-                    messages: defaultLangData.messages
+                    messages: defaultLangData.messages,
+                    fallbackMessages: defaultLangData.messages
                 });
             });
         });

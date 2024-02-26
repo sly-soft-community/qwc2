@@ -1,5 +1,5 @@
 /**
- * Copyright 2023 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,17 +9,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {addLayer, addLayerFeatures, changeLayerProperty, removeLayer, LayerRole} from 'qwc2/actions/layers';
-import {setCurrentTask} from 'qwc2/actions/task';
-import ResizeableWindow from 'qwc2/components/ResizeableWindow';
-import Spinner from 'qwc2/components/Spinner';
-import CoordinatesUtils from 'qwc2/utils/CoordinatesUtils';
-import LocaleUtils from 'qwc2/utils/LocaleUtils';
+import {addLayer, addLayerFeatures, changeLayerProperty, removeLayer, LayerRole} from '../actions/layers';
+import {setCurrentTask} from '../actions/task';
+import ResizeableWindow from '../components/ResizeableWindow';
+import Spinner from '../components/Spinner';
+import CoordinatesUtils from '../utils/CoordinatesUtils';
+import LocaleUtils from '../utils/LocaleUtils';
 import './style/Cyclomedia.css';
 import MapUtils from 'qwc2/utils/MapUtils';
+import ResourceRegistry from 'qwc2/utils/ResourceRegistry';
 
 
-const Status = {LOGIN: 0, LOADING: 1, LOADED: 2, ERROR: 3, HAVEPOS: 4};
+const Status = {LOGIN: 0, INITIALIZING: 1, INITIALIZED: 2, ERROR: 3, LOADPOS: 4, HAVEPOS: 5};
 
 /**
  * Cyclomedia integration for QWC2.
@@ -39,13 +40,14 @@ class Cyclomedia extends React.Component {
         cyclomediaVersion: PropTypes.string,
         /** Whether to display Cyclomedia measurement geometries on the map. */
         displayMeasurements: PropTypes.bool,
-        /** Default window geometry with size, position and docking status. */
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
             initialHeight: PropTypes.number,
             initialX: PropTypes.number,
             initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
+            initiallyDocked: PropTypes.bool,
+            side: PropTypes.string
         }),
         /** The relative path to the redirect login handling of oauth. */
         loginRedirectUri: PropTypes.string,
@@ -69,7 +71,8 @@ class Cyclomedia extends React.Component {
             initialHeight: 640,
             initialX: 0,
             initialY: 0,
-            initiallyDocked: false
+            initiallyDocked: false,
+            side: 'left'
         },
         maxMapScale: 10000,
         projection: 'EPSG:3857'
@@ -88,7 +91,7 @@ class Cyclomedia extends React.Component {
     }
     componentDidUpdate(prevProps, prevState) {
         if (!prevProps.active && this.props.active) {
-            this.setState({status: this.props.clientId ? Status.LOADING : Status.LOGIN, loginFailed: false});
+            this.setState({status: this.props.clientId ? Status.INITIALIZING : Status.LOGIN, loginFailed: false});
         } else if (
             (prevProps.active && !this.props.active) ||
             (prevProps.theme && !this.props.theme)
@@ -96,17 +99,20 @@ class Cyclomedia extends React.Component {
             this.onClose();
         }
         // Load WFS when loading
-        if (this.state.status === Status.LOADING && prevState.status < Status.LOADING) {
+        if (this.state.status === Status.INITIALIZING && prevState.status < Status.INITIALIZING) {
             this.addRecordingsWFS();
         }
         // Handle map click events
-        if ((this.state.status === Status.LOADED || this.state.status === Status.HAVEPOS) && this.iframe) {
+        if ((this.state.status === Status.INITIALIZED || this.state.status === Status.HAVEPOS) && this.iframe) {
             const clickPoint = this.queryPoint(prevProps);
             if (clickPoint) {
                 const posStr = clickPoint[0] + "," + clickPoint[1];
                 this.iframe.contentWindow.openImage(posStr, this.props.mapCrs);
-                if (this.state.status === Status.LOADED) {
-                    this.setState({status: Status.HAVEPOS});
+                if (this.state.status !== Status.LOADPOS) {
+                    this.setState({status: Status.LOADPOS});
+                    this.props.removeLayer('cyclomedia-cone');
+                    this.props.removeLayer('cyclomedia-measurements');
+                    ResourceRegistry.removeResource("cyclomedia-cone");
                 }
             }
         }
@@ -117,11 +123,13 @@ class Cyclomedia extends React.Component {
             this.props.removeLayer('cyclomedia-recordings');
             this.props.removeLayer('cyclomedia-cone');
             this.props.removeLayer('cyclomedia-measurements');
+            ResourceRegistry.removeResource("cyclomedia-cone");
         }
     }
     onClose = () => {
         this.props.setCurrentTask(null);
         this.setState({status: Status.LOGIN, loginFailed: false});
+        this.iframe = null;
     };
     render() {
         if (!this.props.active) {
@@ -144,7 +152,7 @@ class Cyclomedia extends React.Component {
                                 </tr>
                                 <tr>
                                     <td colSpan="2">
-                                        <button className="button" disabled={!this.state.username} onClick={() => this.setState({status: Status.LOADING})} type="button">{LocaleUtils.tr("cyclomedia.login")}</button>
+                                        <button className="button" disabled={!this.state.username} onClick={() => this.setState({status: Status.INITIALIZING})} type="button">{LocaleUtils.tr("cyclomedia.login")}</button>
                                     </td>
                                 </tr>
                                 <tr>
@@ -155,10 +163,10 @@ class Cyclomedia extends React.Component {
                     </div>
                 </div>
             );
-        } else if (this.state.status === Status.LOADING) {
+        } else if (this.state.status === Status.INITIALIZING) {
             overlay = (
                 <div className="cyclomedia-body-overlay">
-                    <Spinner /><span>{LocaleUtils.tr("cyclomedia.loading")}</span>
+                    <Spinner /><span>{LocaleUtils.tr("cyclomedia.initializing")}</span>
                 </div>
             );
         } else if (this.state.status === Status.ERROR) {
@@ -167,24 +175,26 @@ class Cyclomedia extends React.Component {
                     <span>{LocaleUtils.tr("cyclomedia.loaderror")}</span>
                 </div>
             );
-        } else if (this.state.status === Status.LOADED) {
+        } else if (this.state.status === Status.INITIALIZED) {
             overlay = (
                 <div className="cyclomedia-body-overlay">
                     <span>{LocaleUtils.tr("cyclomedia.clickonmap")}</span>
                 </div>
             );
+        } else if (this.state.status === Status.LOADPOS) {
+            overlay = (
+                <div className="cyclomedia-body-overlay">
+                    <Spinner /><span>{LocaleUtils.tr("cyclomedia.loading")}</span>
+                </div>
+            );
         }
         return (
-            <ResizeableWindow icon="cyclomedia"
-                initialHeight={this.props.geometry.initialHeight}
-                initialWidth={this.props.geometry.initialWidth}
-                initialX={this.props.geometry.initialX}
-                initialY={this.props.geometry.initialY}
+            <ResizeableWindow dockable={this.props.geometry.side} icon="cyclomedia"
+                initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
+                initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
                 initiallyDocked={this.props.geometry.initiallyDocked}
-                onClose={this.onClose}
-                splitScreenWhenDocked
-                title={LocaleUtils.trmsg("cyclomedia.title")}
-            >
+                onClose={this.onClose} splitScreenWhenDocked title={LocaleUtils.trmsg("cyclomedia.title")}
+                >
                 <div className="cyclomedia-body" role="body">
                     {this.props.mapScale > this.props.maxMapScale && this.state.status > Status.LOGIN ? (
                         <div className="cyclomedia-scale-hint">
@@ -215,12 +225,12 @@ class Cyclomedia extends React.Component {
                 this.iframe = iframe;
             }
         } else if (!iframe.getAttribute("callback-registered")) {
-            if (iframe.contentWindow.registerCallbacks) {
+            if (iframe.contentWindow && iframe.contentWindow.registerCallbacks) {
                 iframe.setAttribute("callback-registered", true);
                 iframe.contentWindow.registerCallbacks(this.apiInitialized, this.panoramaPositionChanged, this.measurementChanged);
             }
         } else if (!iframe.getAttribute("init-called")) {
-            if (iframe.contentWindow.StreetSmartApi) {
+            if (iframe.contentWindow && iframe.contentWindow.StreetSmartApi) {
                 iframe.setAttribute("init-called", true);
                 iframe.contentWindow.initApi();
             }
@@ -229,9 +239,12 @@ class Cyclomedia extends React.Component {
         }
     };
     apiInitialized = (success, message = "") => {
-        this.setState({status: success ? Status.LOADED : Status.LOGIN, message: message, loginFailed: !success});
+        this.setState({status: success ? Status.INITIALIZED : Status.LOGIN, message: message, loginFailed: !success});
     };
     panoramaPositionChanged = (posData) => {
+        if (this.state.status !== Status.HAVEPOS) {
+            this.setState({status: Status.HAVEPOS});
+        }
         const scale = 50;
         const angle = posData.hFov / 2.0;
         const width = Math.sin(angle);
@@ -255,6 +268,7 @@ class Cyclomedia extends React.Component {
         coordinates.slice(1).forEach(coo => context.lineTo(coo[0], coo[1]));
         context.closePath();
         context.fill();
+        ResourceRegistry.addResource("cyclomedia-cone", context.canvas);
         const feature = {
             geometry: {
                 type: 'Point',
@@ -263,7 +277,7 @@ class Cyclomedia extends React.Component {
             crs: posData.crs,
             styleName: 'image',
             styleOptions: {
-                img: context.canvas,
+                img: "cyclomedia-cone",
                 rotation: posData.yaw,
                 size: dimensions
             }
@@ -293,7 +307,7 @@ class Cyclomedia extends React.Component {
                 this.props.removeLayer("cyclomedia-measurements");
             }
         }
-    }
+    };
     cyclomediaIndexHtml = () => {
         const supportedLang = ["de", "en-GB", "en-US", "fi", "fr", "nl", "tr", "pl"];
         let lang = LocaleUtils.lang();
@@ -305,11 +319,12 @@ class Cyclomedia extends React.Component {
         }
         const loginOauth = !!this.props.clientId && !this.state.loginFailed;
         return `
+            <!DOCTYPE html>
             <html>
             <head>
             <script type="text/javascript" src="https://unpkg.com/react@16.12.0/umd/react.production.min.js"></script>
             <script type="text/javascript" src="https://unpkg.com/react-dom@16.12.0/umd/react-dom.production.min.js"></script>
-            <script type="text/javascript" src="https://streetsmart.cyclomedia.com/api/v${this.props.cyclomediaVersion}/StreetSmartApi.js?f1733f8beb7131559070"></script>
+            <script type="text/javascript" src="https://streetsmart.cyclomedia.com/api/v${this.props.cyclomediaVersion}/StreetSmartApi.js"></script>
             <script type="text/javascript">
             let apiInitialized = false;
             let initCallback = null;
@@ -401,6 +416,9 @@ class Cyclomedia extends React.Component {
                 measureCallback = _measureCallback;
             }
             </script>
+            <style>
+              html, body, #streetsmartApi {height: 100%;}
+            </style>
             </head>
             <body style="margin: 0">
             <div id="streetsmartApi">
@@ -474,8 +492,8 @@ class Cyclomedia extends React.Component {
         if (this.props.click === prevProps.click)  {
             return null;
         }
-        const cmFeature = this.props.click.features.find(feature => feature.layer === 'cyclomedia-recordings');
-        return cmFeature ? cmFeature.geometry : null;
+        const cmFeature = this.props.click.features.find(feature => feature.layerId === 'cyclomedia-recordings');
+        return cmFeature ? cmFeature.geometry.coordinates : null;
     };
 }
 

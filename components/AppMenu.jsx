@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -18,6 +18,7 @@ import InputContainer from '../components/InputContainer';
 import LocaleUtils from '../utils/LocaleUtils';
 import ConfigUtils from '../utils/ConfigUtils';
 import MiscUtils from '../utils/MiscUtils';
+import ThemeUtils from '../utils/ThemeUtils';
 import Icon from './Icon';
 import './style/AppMenu.css';
 import isEqual from 'lodash.isequal';
@@ -73,6 +74,11 @@ class AppMenu extends React.Component {
         this.boundShortcuts.forEach(shortcut => mousetrap.unbind(shortcut));
         if (this.props.appMenuShortcut) {
             mousetrap.unbind(this.props.appMenuShortcut, this.toggleMenu);
+        }
+        if (this.state.menuVisible) {
+            document.removeEventListener('click', this.checkCloseMenu);
+            document.removeEventListener('keydown', this.onKeyPress, true);
+            document.removeEventListener('mousemove', this.onMouseMove, true);
         }
     }
     addKeyBindings = (items) => {
@@ -302,6 +308,9 @@ class AppMenu extends React.Component {
         }
     };
     itemAllowed = (item) => {
+        if (!ThemeUtils.themFlagsAllowed(this.props.currentTheme, item.themeFlagWhitelist, item. themeFlagBlacklist)) {
+            return false;
+        }
         if (item.themeBlacklist && (item.themeBlacklist.includes(this.props.currentTheme.title) || item.themeBlacklist.includes(this.props.currentTheme.name))) {
             return false;
         }

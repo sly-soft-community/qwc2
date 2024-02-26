@@ -1,15 +1,23 @@
 {
   "locale": "fi-FI",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "",
-      "menulabel": "Kartat & Työkalut",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "",
         "Cyclomedia": "",
         "DxfExport": "DXF vienti",
         "Editing": "Editointi",
         "FeatureForm": "",
+        "FeatureSearch": "",
         "Help": "Apua",
         "IdentifyPoint": "",
         "IdentifyRegion": "Tunnista alue",
@@ -21,8 +29,10 @@
         "Measure": "Mittaa",
         "MeasureLineString": "Mittaa viiva",
         "MeasurePolygon": "Mittaa monikulmion",
+        "Portal": "",
         "Print": "Tulosta",
         "RasterExport": "Rasterin vienti",
+        "MapExport": "Vienti kartta",
         "Redlining": "Omat merkinnät",
         "Routing": "",
         "Share": "Jaa linkki",
@@ -31,11 +41,13 @@
         "Bookmark": "Kirjanmerkit",
         "TimeManager": "",
         "Settings": ""
-      }
+      },
+      "menulabel": "Kartat & Työkalut"
     },
     "attribtable": {
       "addfeature": "",
       "commit": "",
+      "csvexport": "",
       "delete": "",
       "deletefailed": "",
       "deletefeatures": "",
@@ -44,6 +56,7 @@
       "formeditmode": "",
       "geomnoadd": "",
       "layer": "",
+      "limittoextent": "",
       "loadfailed": "",
       "loading": "",
       "nodelete": "",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Kopioi napsauttamalla",
-      "copied": "Kopioitu"
+      "copied": "Kopioitu",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Maximize",
       "minimize": "Minimize",
-      "nocompatpick": "",
       "noeditablelayers": "No editable layers.",
       "paint": "",
       "pick": "Pick",
@@ -129,6 +143,12 @@
       "querying": "",
       "title": ""
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "",
       "placeholder": "Valitse tiedosto..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "a.s.l.",
       "distance": "Etäisyys",
+      "drawnodes": "",
+      "error": "",
       "export": "",
       "height": "Korkeus",
-      "loading": "Korkeusprofiilin laskenta käynnissä..."
+      "loading": "Korkeusprofiilin laskenta käynnissä...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "",
@@ -164,6 +189,8 @@
       "localfile": "Paikallinen tiedosto",
       "nofeatures": "Ominaisuustietoja ei voitu tuoda.",
       "noresults": "Tuloksia ei ole tai virheellinen URL-osoite",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "Anna rajapinnoille URL..."
     },
@@ -221,6 +248,22 @@
       "loading": "Lataa...",
       "resetrotation": ""
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Formaatti:",
+      "resolution": "Resoluutio:",
+      "scale": "",
+      "size": "",
+      "submit": "",
+      "usersize": "",
+      "wait": ""
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Korkeus",
       "title": "Sijainti"
@@ -239,6 +282,9 @@
       "metric": "",
       "pointLabel": "Sijainti"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": ""
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Formaatti",
       "grid": "Ristikko",
       "layout": "Layout",
       "legend": "Selite",
@@ -302,6 +353,7 @@
       "label": "Selite",
       "layer": "Taso",
       "line": "Viiva",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Poimi",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Kaikki",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Aktivoi taso",
       "existinglayer": "Taso on jo lisätty karttaan",
+      "filter": "",
       "invisiblelayer": "The result lies on a layer which is not visible.",
+      "limittoarea": "",
       "more": "Lisää...",
+      "none": "",
       "noresults": "",
       "providerselection": "",
       "search": "Etsi",
       "searchall": "Etsi kohteita tai lisää kartta...",
       "searchinprogress": "",
       "searchreset": "",
+      "solr": "",
+      "themelayers": "",
       "themes": "Teemat"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Teema informaatio"
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "",
       "confirmlang": "",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "",
-      "systemlang": ""
+      "systemlang": "",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR-koodi",
       "directLinkTitle": "Suora linkillä",
+      "expires": "",
       "refresh": "",
       "shareTitle": "QWC2",
       "showpin": "",
       "socialIntro": "Jaa someen"
     },
     "snapping": {
+      "edge": "",
       "loading": "",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "Lisää taso",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Lisää tasoja nykyiseen karttaan",
       "addtotheme": "Lisää nykyiseen teemaan",
+      "changedefaulttheme": "",
       "confirmswitch": "",
       "filter": "Suodatus...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

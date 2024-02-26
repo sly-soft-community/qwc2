@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -8,7 +8,10 @@
 
 import ol from 'openlayers';
 import ConfigUtils from './ConfigUtils';
+import ResourceRegistry from './ResourceRegistry';
 import markerIcon from './img/marker-icon.png';
+import arrowhead from './img/arrowhead.svg';
+import measurehead from './img/measurehead.svg';
 
 const DEFAULT_FEATURE_STYLE = {
     strokeColor: [0, 0, 255, 1],
@@ -29,8 +32,8 @@ const DEFAULT_MARKER_STYLE = {
     scale: undefined,
     crossOrigin: undefined,
     textColor: '#000000',
-    textStroke: '#FFFFFF',
-}
+    textStroke: '#FFFFFF'
+};
 
 const DEFAULT_INTERACTION_STYLE = {
     fillColor: [255, 0, 0, 0.5],
@@ -52,7 +55,17 @@ const DEFAULT_INTERACTION_STYLE = {
     measurePointRadius: 6,
     sketchPointFillColor: "#0099FF",
     sketchPointStrokeColor: "white",
-    sketchPointRadius: 6,
+    sketchPointRadius: 6
+};
+
+export const END_MARKERS = {
+    OUTARROW: {src: arrowhead, anchor: [0.05, 0.5], baserotation: 0},
+    INARROW: {src: arrowhead, anchor: [0.05, 0.5], baserotation: 180},
+    LINE: {src: measurehead, anchor: [0.05, 0.5], baserotation: 0}
+};
+
+export function computeFeatureStyle(feature) {
+    return {...DEFAULT_FEATURE_STYLE, ...ConfigUtils.getConfigProp("defaultFeatureStyle"), ...feature.styleOptions};
 }
 
 const defaultStyle = (feature, options) => {
@@ -125,6 +138,39 @@ const defaultStyle = (feature, options) => {
             }));
         }
     }
+    if (feature.getGeometry().getType() === "LineString" && opts.headmarker in END_MARKERS) {
+        const p1 = feature.getGeometry().getCoordinates()[0];
+        const p2 = feature.getGeometry().getCoordinates()[1];
+        const rotation = 0.5 * Math.PI + Math.atan2(p1[0] - p2[0], p1[1] - p2[1]);
+        styles.push(new ol.style.Style({
+            geometry: new ol.geom.Point(p1),
+            image: new ol.style.Icon({
+                ...END_MARKERS[opts.headmarker],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'fraction',
+                color: opts.strokeColor,
+                rotation: END_MARKERS[opts.headmarker].baserotation / 180 * Math.PI + rotation,
+                scale: 0.125 * (1 + opts.strokeWidth) // Also update in VectorLayerUtils.generateMarkerGeometry
+            })
+        }));
+    }
+    if (feature.getGeometry().getType() === "LineString" && opts.tailmarker in END_MARKERS) {
+        const l = feature.getGeometry().getCoordinates().length;
+        const p1 = feature.getGeometry().getCoordinates()[l - 1];
+        const p2 = feature.getGeometry().getCoordinates()[l - 2];
+        const rotation = 0.5 * Math.PI + Math.atan2(p1[0] - p2[0], p1[1] - p2[1]);
+        styles.push(new ol.style.Style({
+            geometry: new ol.geom.Point(p1),
+            image: new ol.style.Icon({
+                ...END_MARKERS[opts.tailmarker],
+                anchorXUnits: 'fraction',
+                anchorYUnits: 'fraction',
+                color: opts.strokeColor,
+                rotation: END_MARKERS[opts.tailmarker].baserotation / 180 * Math.PI + rotation,
+                scale: 0.125 * (1 + opts.strokeWidth) // Also update in VectorLayerUtils.generateMarkerGeometry
+            })
+        }));
+    }
     return styles;
 };
 
@@ -142,7 +188,7 @@ export default {
                     crossOrigin: opts.crossOrigin,
                     src: opts.iconSrc,
                     scale: opts.scale,
-                    color: opts.color,
+                    color: opts.color
                 }),
                 text: new ol.style.Text({
                     font: opts.textFont || '11pt sans-serif',
@@ -187,7 +233,7 @@ export default {
                 radius: 5,
                 angle: Math.PI / 4
             }),
-            geometry: opts.geometryFunction,
+            geometry: opts.geometryFunction
         });
     },
     measureInteraction: (feature, options) => {
@@ -208,7 +254,7 @@ export default {
                 fill: new ol.style.Fill({color: opts.measureVertexFillColor}),
                 stroke: new ol.style.Stroke({ color: opts.measureVertexStrokeColor, width: opts.measureVertexStrokeWidth })
             }),
-            geometry: opts.geometryFunction,
+            geometry: opts.geometryFunction
         });
     },
     sketchInteraction: (options) => {
@@ -224,7 +270,7 @@ export default {
     image: (feature, options) => {
         return new ol.style.Style({
             image: new ol.style.Icon({
-                img: options.img,
+                img: ResourceRegistry.getResource(options.img),
                 rotation: options.rotation,
                 anchor: [0.5, 1],
                 imgSize: options.size,

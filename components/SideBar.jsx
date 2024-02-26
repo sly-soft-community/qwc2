@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -83,13 +83,13 @@ class SideBar extends React.Component {
             minWidth: this.props.minWidth,
             zIndex: visible ? 5 : 4
         };
-        
+
         const isLeftSide = this.props.side === "left";
         const classes = classnames({
             "sidebar": true,
             "sidebar-open": visible,
             "sidebar-left": isLeftSide,
-            "sidebar-right": !isLeftSide,
+            "sidebar-right": !isLeftSide
         });
         const closeIcon = isLeftSide ? "chevron-left" : "chevron-right";
 
@@ -139,8 +139,10 @@ class SideBar extends React.Component {
         const resizeSidebar = (event) => {
             sidebar.style.width = (startWidth + sign * (startMouseX - event.clientX)) + 'px';
         };
+        document.body.style.userSelect = 'none';
         window.addEventListener("mousemove", resizeSidebar);
         window.addEventListener("mouseup", () => {
+            document.body.style.userSelect = '';
             window.removeEventListener("mousemove", resizeSidebar);
         }, {once: true});
     };
@@ -154,8 +156,10 @@ class SideBar extends React.Component {
         const resizeSidebar = (event) => {
             sidebar.style.height = (startHeight + (event.clientY - startMouseY)) + 'px';
         };
+        document.body.style.userSelect = 'none';
         window.addEventListener("mousemove", resizeSidebar);
         window.addEventListener("mouseup", () => {
+            document.body.style.userSelect = '';
             window.removeEventListener("mousemove", resizeSidebar);
         }, {once: true});
     };

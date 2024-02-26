@@ -15,6 +15,7 @@ class LayerCatalogWidget extends React.PureComponent {
     static propTypes = {
         addLayer: PropTypes.func,
         catalog: PropTypes.array,
+        levelBasedIndentSize: PropTypes.bool,
         mapCrs: PropTypes.string,
         pendingRequests: PropTypes.number
     };
@@ -39,11 +40,16 @@ class LayerCatalogWidget extends React.PureComponent {
         }
         const type = entry.resource ? entry.resource.slice(0, entry.resource.indexOf(":")) : entry.type;
         const key = (entry.resource || (entry.type + ":" + entry.name)) + ":" + idx;
+        const indentSize = !this.props.levelBasedIndentSize && level > 0 ? 1.5 : level;
         return (
-            <div key={key} style={{paddingLeft: level + 'em'}}>
+            <div key={key} style={{paddingLeft: indentSize + 'em'}}>
                 <div className="layer-catalog-widget-entry">
-                    {hasSublayers ? (<Icon icon={entry.expanded ? 'tree_minus' : 'tree_plus'} onClick={() => this.toggleLayerListEntry(path)} />) : null}
-                    <span onClick={type ? () => this.addServiceLayer(entry) : null}>
+                    {hasSublayers ? (
+                        <Icon icon={entry.expanded ? 'tree_minus' : 'tree_plus'} onClick={() => this.toggleLayerListEntry(path)} />
+                    ) : (
+                        <span className="layer-catalog-widget-entry-iconspacer" />
+                    )}
+                    <span className="layer-catalog-widget-entry-contents" onClick={() => type ? this.addServiceLayer(entry) : this.toggleLayerListEntry(path)}>
                         {type ? (<span className="layer-catalog-widget-entry-service">{type}</span>) : null}
                         {entry.title}
                     </span>
@@ -98,6 +104,9 @@ class LayerCatalogWidget extends React.PureComponent {
             const params = LayerUtils.splitLayerUrlParam(entry.resource);
             ServiceLayerUtils.findLayers(params.type, params.url, [params], this.props.mapCrs, (id, layer) => {
                 if (layer) {
+                    if (entry.sublayers === false) {
+                        layer.sublayers = null;
+                    }
                     this.props.addLayer(layer);
                 } else {
                     // eslint-disable-next-line

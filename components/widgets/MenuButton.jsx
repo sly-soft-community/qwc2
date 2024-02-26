@@ -10,18 +10,15 @@ export default class MenuButton extends React.Component {
         active: PropTypes.string,
         children: PropTypes.array,
         className: PropTypes.string,
+        disabled: PropTypes.bool,
         menuClassName: PropTypes.string,
         menuIcon: PropTypes.string,
         menuLabel: PropTypes.string,
-        onActivate: PropTypes.func,
-        readOnly: PropTypes.bool
+        onActivate: PropTypes.func
     };
     state = {
         popup: false,
         selected: null
-    };
-    static defaultProps = {
-        readOnly: false
     };
     constructor(props) {
         super(props);
@@ -47,18 +44,25 @@ export default class MenuButton extends React.Component {
         } else {
             buttonContents = children.filter((child) => child.props.value === this.state.selected);
         }
+        const classes = classnames({
+            "menubutton": true,
+            "menubutton-disabled": this.props.disabled,
+            [this.props.className]: !!this.props.className
+        });
         const buttonClassnames = classnames({
             "menubutton-button": true,
+            "menubutton-togglebutton": !this.props.menuIcon && !this.props.menuLabel,
+            "menubutton-menubutton": this.props.menuIcon || this.props.menuLabel,
             "menubutton-button-active": !!this.props.active,
             "menubutton-button-hover": this.state.popup
         });
         return (
-            <div className={"menubutton " + (this.props.className || "")} ref={el => { this.el = el; }}>
-                <div className={buttonClassnames}>
+            <div className={classes} ref={el => { this.el = el; }}>
+                <div className={buttonClassnames} onClick={this.onMenuClicked}>
                     <span className="menubutton-button-content" onClick={this.onButtonClicked}>
                         {buttonContents}
                     </span>
-                    <span className="menubotton-combo-arrow" onClick={this.onMenuClicked}>
+                    <span className="menubotton-button-arrow">
                         <Icon icon="chevron-down" />
                     </span>
                 </div>
@@ -67,13 +71,13 @@ export default class MenuButton extends React.Component {
                         {children.map(child => {
                             const classNames = classnames({
                                 "menubutton-menu-active": child.props.value === this.state.selected && !child.props.disabled,
-                                "menubutton-menu-disabled": child.props.disabled
+                                "menubutton-menu-disabled": child.props.disabled,
+                                [child.props.className]: !!child.props.className
                             });
-                            return (
-                                <div className={classNames + " " + (child.props.className || "")} key={child.props.value} onClickCapture={() => this.onChildClicked(child)}>
-                                    {child}
-                                </div>
-                            );
+                            return React.cloneElement(child, {
+                                className: classNames,
+                                onClickCapture: () => this.onChildClicked(child)
+                            });
                         })}
                     </PopupMenu>
                 ) : null}
@@ -81,11 +85,12 @@ export default class MenuButton extends React.Component {
         );
     }
     onMenuClicked = () => {
-        if (!this.props.readOnly) {
+        if (!this.props.disabled) {
             this.setState({popup: true});
         }
     };
-    onButtonClicked = () => {
+    onButtonClicked = (ev) => {
+        ev.stopPropagation();
         if (this.state.selected) {
             this.props.onActivate(this.state.selected);
         } else {

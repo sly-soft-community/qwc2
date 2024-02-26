@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,6 +12,7 @@ import {connect} from 'react-redux';
 import isEmpty from 'lodash.isempty';
 import {setEditContext, clearEditContext} from '../actions/editing';
 import {LayerRole} from '../actions/layers';
+import {setCurrentTask} from '../actions/task';
 import AttributeForm from '../components/AttributeForm';
 import ResizeableWindow from '../components/ResizeableWindow';
 import TaskBar from '../components/TaskBar';
@@ -43,17 +44,21 @@ class FeatureForm extends React.Component {
         currentEditContext: PropTypes.string,
         editContext: PropTypes.object,
         enabled: PropTypes.bool,
-        iface: PropTypes.object,
-        /** Default window geometry with size, position and docking status. */
+        /** Whether to clear the task when the results window is closed. */
+        exitTaskOnResultsClose: PropTypes.bool,
+        /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
             initialHeight: PropTypes.number,
             initialX: PropTypes.number,
             initialY: PropTypes.number,
-            initiallyDocked: PropTypes.bool
+            initiallyDocked: PropTypes.bool,
+            side: PropTypes.string
         }),
+        iface: PropTypes.object,
         layers: PropTypes.array,
         map: PropTypes.object,
+        setCurrentTask: PropTypes.func,
         setEditContext: PropTypes.func,
         theme: PropTypes.object
     };
@@ -63,7 +68,8 @@ class FeatureForm extends React.Component {
             initialHeight: 480,
             initialX: 0,
             initialY: 0,
-            initiallyDocked: false
+            initiallyDocked: false,
+            side: 'left'
         }
     };
     static defaultState = {
@@ -106,11 +112,12 @@ class FeatureForm extends React.Component {
         }
     }
     queryPoint = (prevProps) => {
-        if (this.props.click.button !== 0 || this.props.click === prevProps.click || (this.props.click.features || []).find(entry => entry.feature === 'startupposmarker')) {
+        if (this.props.click.button !== 0 || this.props.click === prevProps.click || (this.props.click.features || []).find(feature => feature.id === 'startupposmarker')) {
             return null;
         }
-        if (this.props.click.feature === 'searchmarker' && this.props.click.geometry && this.props.click.geomType === 'Point') {
-            return this.props.click.geometry;
+        const searchMarker = (this.props.click.features || []).find(feature => feature.id === 'searchmarker');
+        if (searchMarker) {
+            return searchMarker.geometry.coordinates;
         }
         return this.props.click.coordinate;
     };
@@ -148,7 +155,7 @@ class FeatureForm extends React.Component {
                         pendingRequests: state.pendingRequests - 1
                     }));
                 }
-            });
+            }, layer.filterParams?.[sublayer.name], layer.filterGeom);
         });
         this.setState({pendingRequests: pendingRequests, pickedFeatures: {}, selectedFeature: ""});
     };
@@ -194,11 +201,11 @@ class FeatureForm extends React.Component {
                 );
             }
             resultWindow = (
-                <ResizeableWindow icon="featureform"
+                <ResizeableWindow dockable={this.props.geometry.side} icon="featureform"
                     initialHeight={this.props.geometry.initialHeight} initialWidth={this.props.geometry.initialWidth}
                     initialX={this.props.geometry.initialX} initialY={this.props.geometry.initialY}
                     initiallyDocked={this.props.geometry.initiallyDocked} key="FeatureForm"
-                    onClose={this.clearResults} title={LocaleUtils.trmsg("featureform.title")}
+                    onClose={this.onWindowClose} title={LocaleUtils.trmsg("featureform.title")}
                 >
                     {body}
                 </ResizeableWindow>
@@ -214,6 +221,12 @@ class FeatureForm extends React.Component {
     }
     setSelectedFeature = (ev) => {
         this.setState({selectedFeature: ev.target.value});
+    };
+    onWindowClose = () => {
+        this.clearResults();
+        if (this.props.exitTaskOnResultsClose) {
+            this.props.setCurrentTask(null);
+        }
     };
     clearResults = () => {
         if (!this.props.editContext.changed) {
@@ -233,6 +246,7 @@ export default (iface = EditingInterface) => {
         map: state.map,
         theme: state.theme.current
     }), {
+        setCurrentTask: setCurrentTask,
         clearEditContext: clearEditContext,
         setEditContext: setEditContext
     })(FeatureForm);

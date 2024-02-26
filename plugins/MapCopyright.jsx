@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -22,10 +22,11 @@ class MapCopyright extends React.Component {
     static propTypes = {
         layers: PropTypes.array,
         map: PropTypes.object,
+        mapMargins: PropTypes.object,
         /** Whether to prepend the layer name to the attribution string. */
         prefixCopyrightsWithLayerNames: PropTypes.bool,
         /** Whether to only display the attribution of the theme, omitting external layers. */
-        showThemeCopyrightOnly: PropTypes.bool
+        showThemeCopyrightOnly: PropTypes.bool,
     };
     state = {
         currentCopyrights: {}
@@ -50,8 +51,14 @@ class MapCopyright extends React.Component {
         if (isEmpty(copyrights)) {
             return null;
         }
+        const right = this.props.mapMargins.right;
+        const bottom = this.props.mapMargins.bottom;
+        const style = {
+            right: 'calc(0.25em + ' + right + 'px)',
+            bottom: 'calc(3.4em + ' + bottom + 'px)'
+        };
         return (
-            <div id="MapCopyright">
+            <div id="MapCopyright" style={style}>
                 {copyrights}
             </div>
         );
@@ -67,7 +74,8 @@ class MapCopyright extends React.Component {
 
 const selector = (state) => ({
     layers: state.layers.flat,
-    map: state.map
+    map: state.map,
+    mapMargins: state.windows.mapMargins
 });
 
 export default connect(selector, {})(MapCopyright);

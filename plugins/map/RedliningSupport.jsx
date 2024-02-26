@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,14 +12,16 @@ import {connect} from 'react-redux';
 import {createSelector} from 'reselect';
 import {v4 as uuidv4} from 'uuid';
 import ol from 'openlayers';
+import polySelfIntersections from 'geojson-polygon-self-intersections';
+import isEmpty from 'lodash.isempty';
 import {changeRedliningState} from '../../actions/redlining';
 import {LayerRole, addLayerFeatures, removeLayerFeatures} from '../../actions/layers';
 import {OlLayerAdded, OlLayerUpdated} from '../../components/map/OlLayer';
 import NumericInputWindow from '../../components/NumericInputWindow';
 import displayCrsSelector from '../../selectors/displaycrs';
 import FeatureStyles from '../../utils/FeatureStyles';
+import MapUtils from '../../utils/MapUtils';
 import MeasureUtils from '../../utils/MeasureUtils';
-import SnapInteraction from './SnapInteraction';
 
 const GeomTypeConfig = {
     Text: {drawInteraction: (opts) => new ol.interaction.Draw({...opts, type: "Point"}), editTool: 'Pick', drawNodes: true},
@@ -40,8 +42,7 @@ class RedliningSupport extends React.Component {
         map: PropTypes.object,
         mapCrs: PropTypes.string,
         redlining: PropTypes.object,
-        removeLayerFeatures: PropTypes.func,
-        snappingConfig: PropTypes.object
+        removeLayerFeatures: PropTypes.func
     };
     static defaultProps = {
         redlining: {}
@@ -50,7 +51,6 @@ class RedliningSupport extends React.Component {
         super(props);
 
         this.interactions = [];
-        this.snapInteraction = null;
         this.picking = false;
         this.currentFeature = null;
         this.blockOnChange = false;
@@ -84,8 +84,16 @@ class RedliningSupport extends React.Component {
             // pass
         } else if (!this.props.redlining || !this.props.redlining.action) {
             this.reset(layerChanged);
+        } else if (this.props.redlining.action === 'Commit') {
+            if (this.props.redlining.style !== prevProps.redlining.style) {
+                this.updateFeatureStyle(this.props.redlining.style);
+            }
+            this.commitCurrentFeature();
+            this.props.changeRedliningState({...prevProps.redlining, action: 'Pick', selectedFeature: null});
         } else if ((this.props.redlining.action === 'Pick' || this.props.redlining.action === 'Buffer') && (prevProps.redlining.action !== this.props.redlining.action || layerChanged || (!this.props.redlining.selectedFeature && prevProps.redlining.selectedFeature))) {
             this.addPickInteraction(layerChanged);
+        } else if (this.props.redlining.action === 'PickDraw' && (prevProps.redlining.action !== 'PickDraw' || this.props.redlining.geomType !== prevProps.redlining.geomType)) {
+            this.addPickDrawInteraction(true);
         } else if (this.props.redlining.action === 'Transform' && prevProps.redlining.action !== 'Transform') {
             this.addTransformInteraction(layerChanged);
         } else if (this.props.redlining.action === 'Delete') {
@@ -96,9 +104,6 @@ class RedliningSupport extends React.Component {
             this.addDrawInteraction(layerChanged);
         } else if (this.props.redlining.style !== prevProps.redlining.style) {
             this.updateFeatureStyle(this.props.redlining.style);
-        }
-        if (this.snapInteraction && this.props.snappingConfig.active !== prevProps.snappingConfig.active) {
-            this.snapInteraction.setActive(this.props.snappingConfig.active);
         }
         if (this.currentFeature && (
             this.props.displayCrs !== prevProps.displayCrs ||
@@ -122,8 +127,8 @@ class RedliningSupport extends React.Component {
     };
     updateCurrentFeature = (feature) => {
         if (this.currentFeature && this.props.redlining.selectedFeature) {
-            if (feature.properties.circleParams) {
-                const circleParams = feature.properties.circleParams;
+            if (feature.circleParams) {
+                const circleParams = feature.circleParams;
                 this.currentFeature.setGeometry(new ol.geom.Circle(circleParams.center, circleParams.radius));
             } else {
                 this.currentFeature.getGeometry().setCoordinates(feature.geometry.coordinates);
@@ -137,7 +142,9 @@ class RedliningSupport extends React.Component {
             strokeWidth: 1 + 0.5 * styleProps.size,
             fillColor: styleProps.fillColor,
             circleRadius: 5 + styleProps.size,
-            strokeDash: []
+            strokeDash: [],
+            headmarker: styleProps.headmarker,
+            tailmarker: styleProps.tailmarker
         };
     };
     styleProps = (feature) => {
@@ -147,16 +154,18 @@ class RedliningSupport extends React.Component {
             borderColor: styleOptions.strokeColor,
             size: (styleOptions.strokeWidth - 1) * 2,
             fillColor: styleOptions.fillColor,
-            text: label
+            text: label,
+            headmarker: styleOptions.headmarker,
+            tailmarker: styleOptions.tailmarker
         };
     };
     updateFeatureStyle = (styleProps) => {
         if (this.currentFeature) {
-            const isText = this.currentFeature.get("shape") === "Text";
+            const styleName = this.currentFeature.get("shape") === "Text" ? "text" : "default";
             const opts = this.styleOptions(styleProps);
             this.blockOnChange = true;
             this.currentFeature.set('label', styleProps.text);
-            this.currentFeature.set('styleName', isText ? "text" : "default");
+            this.currentFeature.set('styleName', styleName);
             this.currentFeature.set('styleOptions', opts);
             this.blockOnChange = false;
         }
@@ -224,24 +233,16 @@ class RedliningSupport extends React.Component {
             this.currentFeature.on('change', this.updateMeasurements);
         }, this);
         drawInteraction.on('drawend', () => {
-            const feature = this.currentFeature;
+            const featureId = this.currentFeature.getId();
             this.commitCurrentFeature(true);
             if (geomTypeConfig.editTool === 'Transform') {
-                this.enterTemporaryTransformMode(feature.getId(), this.props.redlining.layer);
+                this.enterTemporaryTransformMode(featureId, this.props.redlining.layer);
             } else {
-                this.enterTemporaryPickMode(feature.getId(), this.props.redlining.layer);
+                this.enterTemporaryPickMode(featureId, this.props.redlining.layer);
             }
         }, this);
         this.props.map.addInteraction(drawInteraction);
-        this.interactions = [drawInteraction];
-        if (this.props.snappingConfig.enabled) {
-            const redliningLayer = this.searchRedliningLayer(this.props.redlining.layer);
-            if (redliningLayer) {
-                this.snapInteraction = new SnapInteraction({source: redliningLayer.getSource()});
-                this.snapInteraction.setActive(this.props.snappingConfig.active);
-                this.props.map.addInteraction(this.snapInteraction);
-            }
-        }
+        this.interactions.push(drawInteraction);
     };
     updateMeasurements = () => {
         if (this.blockOnChange || !this.currentFeature) {
@@ -269,13 +270,13 @@ class RedliningSupport extends React.Component {
         if (!redliningLayer) {
             OlLayerAdded.connect((layer) => {
                 if (layer.get("id") === layerId) {
-                    const feature = layer.getSource().getFeatureById(featureId);
+                    const feature = featureId ? layer.getSource().getFeatureById(featureId) : null;
                     callback(layer, feature);
                     return true;
                 }
                 return false;
             });
-        } else {
+        } else if (featureId) {
             const feature = redliningLayer.getSource().getFeatureById(featureId);
             if (feature) {
                 callback(redliningLayer, feature);
@@ -291,6 +292,8 @@ class RedliningSupport extends React.Component {
                     return false;
                 });
             }
+        } else {
+            callback(redliningLayer, null);
         }
     };
     enterTemporaryPickMode = (featureId, layerId) => {
@@ -311,22 +314,12 @@ class RedliningSupport extends React.Component {
                     }
                     return ol.events.condition.shiftKeyOnly(event) && ol.events.condition.singleClick(event);
                 },
-                style: FeatureStyles.sketchInteraction(),
+                style: FeatureStyles.sketchInteraction()
             });
             modifyInteraction.on('modifyend', () => {
                 this.props.changeRedliningState({selectedFeature: this.currentFeatureObject()});
             });
             this.props.map.addInteraction(modifyInteraction);
-            if (this.snapInteraction) {
-                this.props.map.removeInteraction(this.snapInteraction);
-                // Reorder as last
-                this.props.map.addInteraction(this.snapInteraction);
-            } else if (this.props.snappingConfig.enabled) {
-                // Snapping interaction was not created previously as layer did not yet exist
-                this.snapInteraction = new SnapInteraction({source: redliningLayer.getSource()});
-                this.snapInteraction.setActive(this.props.snappingConfig.active);
-                this.props.map.addInteraction(this.snapInteraction);
-            }
             this.interactions.push(modifyInteraction);
             this.picking = true;
         });
@@ -358,6 +351,57 @@ class RedliningSupport extends React.Component {
             this.picking = true;
         });
     };
+    maybeEnterTemporaryDrawMode = (ev) => {
+        const redliningLayer = this.searchRedliningLayer(this.props.redlining.layer);
+        if (this.currentFeature || (!this.props.redlining.drawMultiple && redliningLayer.getSource().getFeatures().length > 0)) {
+            return;
+        }
+        let featureHit = false;
+        this.props.map.forEachFeatureAtPixel(ev.pixel, (feature, layer) => {
+            featureHit |= (layer === redliningLayer);
+        }, {hitTolerance: 5});
+        if (!redliningLayer || featureHit) {
+            return;
+        }
+        this.reset(false);
+        this.props.map.un('click', this.maybeEnterTemporaryDrawMode);
+
+        const geomTypeConfig = GeomTypeConfig[this.props.redlining.geomType];
+        if (!geomTypeConfig) {
+            return;
+        }
+        const isFreeHand = this.props.redlining.freehand;
+        const drawInteraction = geomTypeConfig.drawInteraction({
+            stopClick: true,
+            condition: (event) => { return event.originalEvent.buttons === 1; },
+            style: () => { return this.picking ? [] : FeatureStyles.sketchInteraction(); },
+            freehand: isFreeHand
+        });
+        drawInteraction.on('drawstart', (evt) => {
+            this.currentFeature = evt.feature;
+            this.currentFeature.setId(uuidv4());
+            this.currentFeature.set('shape', this.props.redlining.geomType);
+            this.currentFeature.setStyle(this.styleFunction);
+            this.updateFeatureStyle(this.props.redlining.style);
+            this.currentFeature.on('change', this.updateMeasurements);
+        }, this);
+        drawInteraction.on('drawend', () => {
+            // Draw end
+            this.commitCurrentFeature(true);
+            this.props.map.removeInteraction(drawInteraction);
+            // Ughh... Apparently we need to wait 250ms for the 'singleclick' event processing to finish to avoid pick interactions picking up the current event
+            setTimeout(() => this.addPickInteraction(true), 300);
+        }, this);
+        this.props.map.addInteraction(drawInteraction);
+        this.interactions.push(drawInteraction);
+        this.picking = false;
+
+        const clickCoord = MapUtils.getHook(MapUtils.GET_COORDINATES_FROM_PIXEL_HOOK)(ev.pixel);
+        drawInteraction.appendCoordinates([clickCoord]);
+        if (this.props.redlining.geomType === 'Point') {
+            drawInteraction.finishDrawing();
+        }
+    };
     leaveTemporaryEditMode = () => {
         if (this.currentFeature) {
             this.commitCurrentFeature();
@@ -365,9 +409,11 @@ class RedliningSupport extends React.Component {
         if (this.picking) {
             // Remove modify interactions
             this.props.map.removeInteraction(this.interactions.pop());
-            // If snapping interaction was added, it will remain as last interaction
             this.picking = false;
         }
+    };
+    addPickDrawInteraction = (layerChanged) => {
+        this.waitForFeatureAndLayer(this.props.redlining.layer, null, () => this.addPickInteraction(layerChanged));
     };
     addPickInteraction = (layerChanged) => {
         this.reset(layerChanged);
@@ -401,9 +447,6 @@ class RedliningSupport extends React.Component {
             if (this.currentFeature) {
                 this.commitCurrentFeature();
             }
-            if (this.snapInteraction) {
-                this.props.map.removeInteraction(this.snapInteraction);
-            }
             if (currentEditInteraction) {
                 this.props.map.removeInteraction(currentEditInteraction);
                 currentEditInteraction = null;
@@ -419,13 +462,11 @@ class RedliningSupport extends React.Component {
                     this.props.map.addInteraction(modifyInteraction);
                     currentEditInteraction = modifyInteraction;
                 }
-                if (this.props.snappingConfig.enabled) {
-                    this.snapInteraction = new SnapInteraction({source: redliningLayer.getSource()});
-                    this.snapInteraction.setActive(this.props.snappingConfig.active);
-                    this.props.map.addInteraction(this.snapInteraction);
-                }
             } else {
-                this.props.changeRedliningState({geomType: null, selectedFeature: null});
+                this.props.changeRedliningState({
+                    geomType: this.props.redlining.action === 'PickDraw' ? this.props.redlining.geomType : null,
+                    selectedFeature: null
+                });
             }
         }, this);
         modifyInteraction.on('modifyend', () => {
@@ -447,8 +488,11 @@ class RedliningSupport extends React.Component {
             }
 
         });
+        if (this.props.redlining.action === 'PickDraw') {
+            this.props.map.on('click', this.maybeEnterTemporaryDrawMode);
+        }
         this.props.map.addInteraction(selectInteraction);
-        this.interactions = [selectInteraction, modifyInteraction, transformInteraction];
+        this.interactions.push(selectInteraction, modifyInteraction, transformInteraction);
         this.picking = true;
     };
     addTransformInteraction = (layerChanged) => {
@@ -484,52 +528,32 @@ class RedliningSupport extends React.Component {
             this.props.changeRedliningState({selectedFeature: this.currentFeatureObject()});
         });
         this.props.map.addInteraction(transformInteraction);
-        this.interactions = [transformInteraction];
+        this.interactions.push(transformInteraction);
     };
     commitCurrentFeature = (newFeature = false) => {
-        if (!this.currentFeature) {
+        const feature = this.currentFeatureObject();
+        if (!feature) {
             return;
         }
-        // Don't commit empty text features
-        const isText = this.currentFeature.get("shape") === "Text";
-        if (isText && !this.currentFeature.get("label")) {
+        // Don't commit empty/invalid features
+        if (
+            (feature.shape === "Text" && !feature.properties.label) ||
+            (feature.shape === "Circle" && feature.circleParams.radius === 0) ||
+            (feature.geometry?.type === "Polygon" && (!isEmpty(polySelfIntersections(feature).geometry.coordinates) || this.currentFeature.getGeometry().getArea() === 0))
+        ) {
             if (!newFeature) {
-                this.props.removeLayerFeatures(this.props.redlining.layer, [this.currentFeature.getId()]);
+                this.props.removeLayerFeatures(this.props.redlining.layer, [feature.id]);
             }
             this.resetSelectedFeature();
             return;
         }
-        this.updateMeasurements();
-
-        const feature = this.currentFeatureObject();
-        if (this.currentFeature.getGeometry() instanceof ol.geom.Circle) {
-            const center = this.currentFeature.getGeometry().getCenter();
-            const radius = this.currentFeature.getGeometry().getRadius();
+        if (feature.shape === "Circle") {
+            const {center, radius} = feature.circleParams;
             const deg2rad = Math.PI / 180;
             feature.geometry.type = "Polygon";
             feature.geometry.coordinates = [
                 Array.apply(null, Array(91)).map((item, index) => ([center[0] + radius * Math.cos(4 * index * deg2rad), center[1] + radius * Math.sin(4 * index * deg2rad)]))
             ];
-            feature.circleParams = {
-                center: center,
-                radius: radius
-            };
-        }
-        feature.isText = isText;
-        feature.styleName = this.currentFeature.get('styleName');
-        feature.styleOptions = this.currentFeature.get('styleOptions');
-        feature.shape = this.currentFeature.get('shape');
-        feature.measurements = this.currentFeature.get('measurements');
-        // Don't pollute GeoJSON object properties with internal props
-        delete feature.properties.styleName;
-        delete feature.properties.styleOptions;
-        delete feature.properties.isText;
-        delete feature.properties.circleParams;
-        delete feature.properties.shape;
-        delete feature.properties.measurements;
-        // Don't store empty label prop
-        if (feature.properties.label === "") {
-            delete feature.properties.label;
         }
         const layer = {
             id: this.props.redlining.layer,
@@ -551,22 +575,19 @@ class RedliningSupport extends React.Component {
         while (this.interactions.length > 0) {
             this.props.map.removeInteraction(this.interactions.shift());
         }
-        if (this.snapInteraction) {
-            this.props.map.removeInteraction(this.snapInteraction);
-            this.snapInteraction = null;
-        }
         if (this.picking && !layerChanged) {
             this.commitCurrentFeature();
         } else {
             this.resetSelectedFeature();
         }
+        this.props.map.un('click', this.maybeEnterTemporaryDrawMode);
         this.picking = false;
     };
     resetSelectedFeature = () => {
         if (this.currentFeature) {
             // Reset selection style
-            const isText = this.currentFeature.get("shape") === "Text";
-            const style = FeatureStyles[isText ? "text" : "default"](this.currentFeature, this.currentFeature.get('styleOptions'));
+            const styleName = this.currentFeature.get("shape") === "Text" ? "text" : "default";
+            const style = FeatureStyles[styleName](this.currentFeature, this.currentFeature.get('styleOptions'));
             this.currentFeature.setStyle(style);
             this.currentFeature.un('change', this.updateMeasurements);
             this.currentFeature = null;
@@ -588,11 +609,25 @@ class RedliningSupport extends React.Component {
         }
         const format = new ol.format.GeoJSON();
         const feature = format.writeFeatureObject(this.currentFeature);
-        if (this.currentFeature.getGeometry() instanceof ol.geom.Circle) {
-            feature.properties.circleParams = {
+        if (this.currentFeature.get("shape") === "Circle") {
+            feature.circleParams = {
                 center: this.currentFeature.getGeometry().getCenter(),
                 radius: this.currentFeature.getGeometry().getRadius()
             };
+        }
+        feature.styleName = this.currentFeature.get('styleName');
+        feature.styleOptions = this.currentFeature.get('styleOptions');
+        feature.shape = this.currentFeature.get('shape');
+        feature.measurements = this.currentFeature.get('measurements');
+        // Don't pollute GeoJSON object properties with internal props
+        delete feature.properties.styleName;
+        delete feature.properties.styleOptions;
+        delete feature.properties.shape;
+        delete feature.properties.measurements;
+        delete feature.properties.circleParams;
+        // Don't store empty label prop
+        if (feature.properties.label === "") {
+            delete feature.properties.label;
         }
         return feature;
     };
@@ -601,8 +636,7 @@ class RedliningSupport extends React.Component {
 const selector = createSelector([state => state, displayCrsSelector], (state, displaycrs) => ({
     redlining: state.redlining,
     mapCrs: state.map.projection,
-    displayCrs: displaycrs,
-    snappingConfig: state.map.snapping
+    displayCrs: displaycrs
 }));
 
 export default connect(selector, {

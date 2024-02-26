@@ -1,5 +1,5 @@
 /**
- * Copyright 2020-2021 Sourcepole AG
+ * Copyright 2020-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -19,6 +19,11 @@ export const UNREGISTER_WINDOW = 'UNREGISTER_WINDOW';
 export const RAISE_WINDOW = 'RAISE_WINDOW';
 export const SET_SPLIT_SCREEN = 'SET_SPLIT_SCREEN';
 
+export const NotificationType = {
+    INFO: 1,
+    WARN: 2,
+    ERROR: 3
+};
 
 export function showIframeDialog(name, url, options) {
     return {
@@ -29,11 +34,13 @@ export function showIframeDialog(name, url, options) {
     };
 }
 
-export function showNotification(name, text) {
+export function showNotification(name, text, type = NotificationType.INFO, sticky = false) {
     return {
         type: SHOW_NOTIFICATION,
         name: name,
-        text: text
+        text: text,
+        notificationType: type,
+        sticky: sticky
     };
 }
 

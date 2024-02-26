@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -341,7 +341,7 @@ class QtDesignerForm extends React.Component {
             if (this.props.report) {
                 return (<div className="qt-designer-form-textarea">{value}</div>);
             } else {
-                return (<TextInput immediateUpdate multiline name={elname} onChange={(val) => updateField(widget.name, val)} {...inputConstraints} style={fontStyle} value={value} />);
+                return (<TextInput multiline name={elname} onChange={(val) => updateField(widget.name, val)} {...inputConstraints} style={fontStyle} value={value} />);
             }
         } else if (widget.class === "QLineEdit") {
             if (widget.name.endsWith("__upload")) {
@@ -360,7 +360,7 @@ class QtDesignerForm extends React.Component {
                 if (this.props.report) {
                     return (<div style={fontStyle}>{value || inputConstraints.placeholder}</div>);
                 } else {
-                    return (<TextInput immediateUpdate name={elname} onChange={(val) => updateField(widget.name, val)} {...inputConstraints} style={fontStyle} value={value} />);
+                    return (<TextInput name={elname} onChange={(val) => updateField(widget.name, val)} {...inputConstraints} style={fontStyle} value={value} />);
                 }
             }
         } else if (widget.class === "QCheckBox" || widget.class === "QRadioButton") {

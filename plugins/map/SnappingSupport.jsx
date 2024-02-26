@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -14,6 +14,7 @@ import ol from 'openlayers';
 import {v1 as uuidv1} from 'uuid';
 import {LayerRole} from '../../actions/layers';
 import {setSnappingConfig} from '../../actions/map';
+import Icon from '../../components/Icon';
 import Spinner from '../../components/Spinner';
 import LocaleUtils from '../../utils/LocaleUtils';
 import MapUtils from '../../utils/MapUtils';
@@ -37,66 +38,112 @@ class SnappingSupport extends React.Component {
         reqId: null, // FeatureInfo request ID
         invalid: true, // Whether the feature cache needs to be rebuilt
         havesnaplayers: false, // Whether there are any snaplayers
-        active: true, // Whether the interaction is active
-        drawing: false // WHether a drawing interaction is active
+        drawing: false // Whether a drawing interaction is active,
     };
     constructor(props) {
         super(props);
         this.source = new ol.source.Vector();
-        this.snapInteraction = new SnapInteraction({source: this.source});
+        this.snapInteraction = new SnapInteraction({
+            source: this.source,
+            edge: this.snapToEdge(props.mapObj.snapping),
+            vertex: this.snapToVertex(props.mapObj.snapping)
+        });
         this.snapInteraction.setActive(this.props.mapObj.snapping.active);
         this.inEventHandler = false;
 
         props.map.getInteractions().on('add', this.handleInteractionAdded);
         props.map.getInteractions().on('remove', this.handleInteractionRemoved);
     }
-    componentDidUpdate(prevProps) {
+    componentDidUpdate(prevProps, prevState) {
         if (this.props.mapObj.bbox !== prevProps.mapObj.bbox || this.props.theme !== prevProps.theme) {
             this.setState({invalid: true});
             this.refreshFeatureCache(true);
         } else if (this.props.layers !== prevProps.layers && this.state.havesnaplayers) {
-            const revChanged = this.props.layers.find(layer => {
-                const prev = layer.role === LayerRole.THEME ? prevProps.layers.find(prevLayer => layer.uuid === prevLayer.uuid) : null;
-                return prev && layer.rev !== prev.rev;
+            const layersChanged = this.props.layers.find(layer => {
+                if (layer.role === LayerRole.THEME) {
+                    const prev = prevProps.layers.find(prevLayer => layer.uuid === prevLayer.uuid);
+                    return prev && layer.rev !== prev.rev;
+                } else if (layer.role === LayerRole.USERLAYER && layer.type === 'vector') {
+                    const prev = prevProps.layers.find(prevLayer => layer.uuid === prevLayer.uuid);
+                    return prev && prev.features !== layer.features;
+                }
+                return false;
             });
-            if (revChanged) {
+            if (layersChanged) {
                 this.setState({invalid: true});
                 // Delay to avoid refreshing the cache before QGIS Server can pick up the new feature
                 setTimeout(() => { this.refreshFeatureCache(true); }, 1500);
             }
         }
-        if (this.props.mapObj.snapping.active !== prevProps.mapObj.snapping.active) {
-            this.snapInteraction.setActive(this.props.mapObj.snapping.active);
+        if (this.props.mapObj.snapping.active !== prevProps.mapObj.snapping.active || this.state.drawing !== prevState.drawing) {
+            this.snapInteraction.setActive(this.props.mapObj.snapping.active !== false);
+            this.snapInteraction.setSnapEdge(this.snapToEdge(this.props.mapObj.snapping));
+            this.snapInteraction.setSnapVertex(this.snapToVertex(this.props.mapObj.snapping));
             if (this.props.mapObj.snapping.active) {
                 this.refreshFeatureCache();
             }
         }
     }
     render() {
-        if (!this.state.drawing) {
+        if (!this.state.drawing || !this.props.mapObj.snapping.enabled) {
             return null;
         }
-        if (isEmpty(this.props.theme.snapping || {}) && this.props.task !== "Redlining") {
-            // Don't display snapping control if no snapping is configuted for current theme
-            return null;
-        }
-        const toolbarClass = !this.state.havesnaplayers ? "snapping-toolbar-inactive" : "";
+        const disabled = !this.state.havesnaplayers || this.props.mapObj.snapping.active === false;
+        const toolbarClass = disabled ? "snapping-toolbar-inactive" : "";
+        const snapEdge = this.snapToEdge(this.props.mapObj.snapping);
+        const snapVertex = this.snapToVertex(this.props.mapObj.snapping);
         return (
             <div className="snapping-toolbar-container">
                 <div className={toolbarClass}>
-                    <label>
-                        {this.state.reqId !== null ? (
-                            <Spinner/>
-                        ) : (
-                            <input checked={this.props.mapObj.snapping.active} onChange={ev => this.props.setSnappingConfig(true, ev.target.checked)} type="checkbox" />
-                        )}
-                        &nbsp;
-                        {this.state.reqId ? LocaleUtils.tr("snapping.loading") : LocaleUtils.tr("snapping.snappingenabled")}
-                    </label>
+                    {this.state.reqId !== null ? (
+                        <Spinner/>
+                    ) : (
+                        <span>
+                            <button className={"button" + (snapVertex ? " pressed" : "")} onClick={() => this.toggleSnap('vertex')} title={LocaleUtils.tr("snapping.vertex")}>
+                                <Icon icon="snap_vertex" size="large" />
+                            </button>
+                            <button className={"button" + (snapEdge ? " pressed" : "")} onClick={() => this.toggleSnap('edge')} title={LocaleUtils.tr("snapping.edge")}>
+                                <Icon icon="snap_edge" size="large" />
+                            </button>
+                        </span>
+                    )}
+                    &nbsp;
+                    {this.state.reqId ? LocaleUtils.tr("snapping.loading") : LocaleUtils.tr("snapping.snappingenabled")}
                 </div>
             </div>
         );
     }
+    snapToEdge = (snappingConfig) => {
+        return snappingConfig.active === true || snappingConfig.active === 'edge';
+    };
+    snapToVertex = (snappingConfig) => {
+        return snappingConfig.active === true || snappingConfig.active === 'vertex';
+    };
+    toggleSnap = (mode) => {
+        let active = this.props.mapObj.snapping.active;
+        if (mode === 'edge') {
+            if (active === true) {
+                active = 'vertex';
+            } else if (active === 'edge') {
+                active = false;
+            } else if (active === 'vertex') {
+                active = true;
+            } else {
+                active = 'edge';
+            }
+        } else if (mode === 'vertex') {
+            if (active === true) {
+                active = 'edge';
+            } else if (active === 'vertex') {
+                active = false;
+            } else if (active === 'edge') {
+                active = true;
+            } else {
+                active = 'vertex';
+            }
+        }
+        this.props.setSnappingConfig(true, active);
+    };
     handleInteractionAdded = (ev) => {
         if (this.inEventHandler) {
             return;
@@ -128,7 +175,6 @@ class SnappingSupport extends React.Component {
                 const interaction = interactions.item(i);
                 if ((interaction instanceof ol.interaction.Draw) || (interaction instanceof ol.interaction.Modify)) {
                     interactions.push(this.snapInteraction);
-                    this.refreshFeatureCache();
                     added = true;
                     break;
                 }
@@ -140,8 +186,9 @@ class SnappingSupport extends React.Component {
         if (!this.state.invalid && !force) {
             return;
         }
+        this.source.clear();
         const themeLayer = this.props.layers.find(layer => layer.role === LayerRole.THEME);
-        if (!this.props.theme || !themeLayer) {
+        if (!this.props.theme || !themeLayer || !this.state.drawing) {
             return;
         }
         const snappingConfig = this.props.theme.snapping || {};
@@ -158,11 +205,23 @@ class SnappingSupport extends React.Component {
             }
             return [...res, cur.name];
         }, []);
-        this.setState({reqId: null, havesnaplayers: !isEmpty(snapLayers)});
-        if (snapLayers.length === 0) {
+        // Gather local snap layers
+        const snapToWfs = scale < snappingConfig.wfsMaxScale;
+        const localLayers = [];
+        this.props.layers.forEach(layer => {
+            if (layer.role === LayerRole.USERLAYER && (layer.type === 'vector' || (layer.type === "wfs" && snapToWfs))) {
+                const olLayer =  this.props.map.getLayers().getArray().find(l => l.get('id') === layer.id);
+                if (olLayer && olLayer.getSource() && olLayer.getSource().getFeaturesInExtent) {
+                    localLayers.push(olLayer);
+                }
+            }
+        });
+        this.setState({reqId: null, havesnaplayers: !isEmpty(snapLayers) || !isEmpty(localLayers)});
+        if (!this.snapInteraction.getMap() || !this.snapInteraction.getActive()) {
             return;
         }
-        if (!this.snapInteraction.getMap() || !this.snapInteraction.getActive()) {
+        if (snapLayers.length === 0) {
+            this.addLocalSnapFeatures(localLayers);
             return;
         }
         const xmin = this.props.mapObj.bbox.bounds[0];
@@ -195,17 +254,26 @@ class SnappingSupport extends React.Component {
             if (response) {
                 const result = IdentifyUtils.parseXmlResponse(response, this.props.mapObj.projection);
                 const features = Object.values(result).reduce((res, cur) => [...res, ...cur], []);
-                this.source.clear();
                 const format = new ol.format.GeoJSON();
                 const olFeatures = format.readFeatures({
                     type: "FeatureCollection",
-                    features: features
+                    features: features.map(feature => ({...feature, id: uuidv1()}))
                 });
                 this.source.addFeatures(olFeatures);
+                // Add features from local layers
+                this.addLocalSnapFeatures(localLayers);
                 this.setState({invalid: false, reqId: null, havesnaplayers: true});
             } else {
                 this.setState({reqId: null});
             }
+        });
+    };
+    addLocalSnapFeatures = (localLayers) => {
+        const extent = this.props.mapObj.bbox.bounds;
+        const projection = ol.proj.get(this.props.mapObj.projection);
+        localLayers.forEach(olLayer => {
+            const olFeatures = olLayer.getSource().getFeaturesInExtent(extent, projection);
+            this.source.addFeatures(olFeatures);
         });
     };
 }

@@ -1,6 +1,6 @@
 /**
  * Copyright 2015 GeoSolutions Sas
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,30 +9,24 @@
 
 import ol from 'openlayers';
 
-const checkLoaded = (layer, options) => {
-    if (layer.getSource && layer.getSource().getState() === 'error') {
-        if (options.onError) {
-            options.onError(layer);
-        }
-    }
-    if (layer.getSource && layer.getSource().getState() === 'loading') {
-        setTimeout(checkLoaded.bind(null, layer, options), 1000);
-    }
-};
-
 export default {
     create: (options) => {
-        const key = options.apiKey;
-        const maxNativeZoom = options.maxNativeZoom || 19;
+        if (!options.apiKey) {
+            /* eslint-disable-next-line */
+            console.warn("No api-key provided for BingMaps layer");
+        }
         const layer = new ol.layer.Tile({
+            minResolution: options.minResolution,
+            maxResolution: options.maxResolution,
             preload: Infinity,
             source: new ol.source.BingMaps({
-                key: key,
-                imagerySet: options.name,
-                maxZoom: maxNativeZoom
-            })
+                projection: options.projection,
+                key: options.apiKey,
+                imagerySet: options.imagerySet ?? options.name,
+                ...(options.sourceConfig || {})
+            }),
+            ...(options.layerConfig || {})
         });
-        setTimeout(checkLoaded.bind(null, layer, options), 1000);
         return layer;
     }
 };

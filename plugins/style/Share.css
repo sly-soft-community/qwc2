@@ -31,3 +31,24 @@
     justify-content: center;
     padding: 1em;
 }
+
+div.share-validity {
+    padding: 1em;
+    font-weight: bold;
+}
+
+#Share div.qr-code h4 {
+    display: inline-block;
+}
+
+button.qr-code-copy-button {
+    margin-left: 0.5em;
+    font-size: 1rem;
+    border: none;
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+button.qr-code-copy-button:hover {
+    border: 1px solid var(--border-color);
+}

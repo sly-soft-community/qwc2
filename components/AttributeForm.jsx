@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -123,7 +123,7 @@ class AttributeForm extends React.Component {
                 {this.props.editContext.geomReadOnly && !this.props.readOnly ? (
                     <div className="attrib-form-geom-readonly">{LocaleUtils.tr("editing.geomreadonly")}</div>
                 ) : null}
-                <form action="" onChange={ev => this.checkValidity(ev.currentTarget)} onSubmit={this.onSubmit} ref={this.checkValidity}>
+                <form action="" onChange={ev => this.checkValidity(ev.currentTarget, true)} onSubmit={this.onSubmit} ref={this.checkValidity}>
                     {this.props.editConfig.form ? (
                         <QtDesignerForm addRelationRecord={this.addRelationRecord} editLayerId={this.props.editConfig.editDataset}
                             editRelationRecord={this.editRelationRecord} feature={this.props.editContext.feature}
@@ -321,9 +321,12 @@ class AttributeForm extends React.Component {
             }
         }
     };
-    checkValidity = (form) => {
+    checkValidity = (form, changed=false) => {
         if (form) {
             this.setState({formValid: form.checkValidity()});
+            if (changed) {
+                this.props.setEditContext(this.props.editContext.id, {changed: true});
+            }
         }
     };
     onSubmit = (ev) => {

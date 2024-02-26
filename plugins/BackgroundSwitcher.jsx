@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -26,6 +26,7 @@ class BackgroundSwitcher extends React.Component {
     static propTypes = {
         changeLayerProperty: PropTypes.func,
         layers: PropTypes.array,
+        mapMargins: PropTypes.object,
         /** The position slot index of the map button, from the bottom (0: bottom slot). */
         position: PropTypes.number,
         toggleBackgroundswitcher: PropTypes.func
@@ -67,10 +68,16 @@ class BackgroundSwitcher extends React.Component {
             return res;
         }, []);
         if (entries.length > 0) {
+            const right = this.props.mapMargins.right;
+            const bottom = this.props.mapMargins.bottom;
+            const style = {
+                right: 'calc(1.5em + ' + right + 'px)',
+                bottom: 'calc(' + bottom + 'px + ' + (5 + 4 * this.props.position) + 'em)'
+            };
             return (
                 <div>
                     <button className={classes} onClick={this.buttonClicked}
-                        style={{bottom: (5 + 4 * this.props.position) + 'em'}} title={tooltip}>
+                        style={style} title={tooltip}>
                         <Icon icon="bglayer" title={tooltip} />
                     </button>
                     <div className={this.state.visible ? 'bgswitcher-active' : ''} id="BackgroundSwitcher">
@@ -83,7 +90,7 @@ class BackgroundSwitcher extends React.Component {
         return null;
     }
     itemTitle = (item) => {
-        return item.titleMsgId ? LocaleUtils.tr(item.titleMsgId) : item.title;
+        return item.titleMsgId ? LocaleUtils.tr(item.titleMsgId) : item.title ?? item.name;
     };
     renderLayerItem = (layer, visible) => {
         const assetsPath = ConfigUtils.getAssetsPath();
@@ -158,7 +165,8 @@ class BackgroundSwitcher extends React.Component {
 }
 
 const selector = (state) => ({
-    layers: state.layers.flat
+    layers: state.layers.flat,
+    mapMargins: state.windows.mapMargins
 });
 
 export default connect(selector, {

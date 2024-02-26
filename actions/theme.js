@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,15 +12,18 @@ ReducerIndex.register("theme", themeReducer);
 
 import isEmpty from 'lodash.isempty';
 import {setIdentifyEnabled} from '../actions/identify';
+import {setCurrentTask} from '../actions/task';
 import ConfigUtils from '../utils/ConfigUtils';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import MapUtils from '../utils/MapUtils';
 import LayerUtils from '../utils/LayerUtils';
+import LocaleUtils from '../utils/LocaleUtils';
 import {UrlParams} from '../utils/PermaLinkUtils';
 import ServiceLayerUtils from '../utils/ServiceLayerUtils';
 import ThemeUtils from '../utils/ThemeUtils';
 import {LayerRole, addLayer, removeLayer, removeAllLayers, replacePlaceholderLayer, setSwipe} from './layers';
 import {configureMap} from './map';
+import {showNotification, NotificationType} from './windows';
 
 export const THEMES_LOADED = 'THEMES_LOADED';
 export const SET_THEME_LAYERS_LIST = 'SET_THEME_LAYERS_LIST';
@@ -42,7 +45,7 @@ export function setThemeLayersList(theme) {
     };
 }
 
-export function finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer) {
+export function finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer, initialTheme) {
     // Create layer
     const themeLayer = ThemeUtils.createThemeLayer(theme, themes);
     let layers = [themeLayer];
@@ -65,10 +68,12 @@ export function finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPo
     }
 
     // Add background layers for theme
-    for (const bgLayer of ThemeUtils.createThemeBackgroundLayers(theme, themes, visibleBgLayer, externalLayers)) {
+    let haveVisibleBg = false;
+    for (const bgLayer of ThemeUtils.createThemeBackgroundLayers(theme, themes, visibleBgLayer, externalLayers, dispatch, initialTheme)) {
+        haveVisibleBg |= bgLayer.visibility;
         dispatch(addLayer(bgLayer));
     }
-    if (visibleBgLayer === "") {
+    if (!haveVisibleBg) {
         UrlParams.updateParams({bl: ""});
     }
 
@@ -87,6 +92,8 @@ export function finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPo
             const service = key.slice(0, idx);
             const serviceUrl = key.slice(idx + 1);
             ServiceLayerUtils.findLayers(service, serviceUrl, externalLayers[key], theme.mapCrs, (id, layer) => {
+                // Don't expose sublayers
+                layer.sublayers = null;
                 dispatch(replacePlaceholderLayer(id, layer));
             });
         }
@@ -102,10 +109,21 @@ export function finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPo
         type: SWITCHING_THEME,
         switching: false
     });
+    const task = theme.config?.startupTask;
+    if (task) {
+        const mapClickAction = ConfigUtils.getPluginConfig(task.key).mapClickAction;
+        dispatch(setCurrentTask(task.key, task.mode, mapClickAction));
+    }
 }
 
 export function setCurrentTheme(theme, themes, preserve = true, initialView = null, layerParams = null, visibleBgLayer = null, permalinkLayers = null, themeLayerRestorer = null, externalLayerRestorer = null) {
     return (dispatch, getState) => {
+        const mapCrs = theme.mapCrs || themes.defaultMapCrs || "EPSG:3857";
+        if (!(mapCrs in CoordinatesUtils.getAvailableCRS())) {
+            dispatch(showNotification("missinglayers", LocaleUtils.tr("app.missingprojection", theme.title, mapCrs), NotificationType.WARN, true));
+            return;
+        }
+        const initialTheme = !getState().theme.current;
         dispatch({
             type: SWITCHING_THEME,
             switching: true
@@ -142,7 +160,7 @@ export function setCurrentTheme(theme, themes, preserve = true, initialView = nu
         // Inherit defaults if necessary
         theme = {
             ...theme,
-            mapCrs: theme.mapCrs || themes.defaultMapCrs || "EPSG:3857",
+            mapCrs: mapCrs,
             version: theme.version || themes.defaultWMSVersion || "1.3.0",
             scales: theme.scales || themes.defaultScales || MapUtils.getGoogleMercatorScales(0, 21),
             printScales: theme.printScales || themes.defaultPrintScales || undefined,
@@ -199,10 +217,17 @@ export function setCurrentTheme(theme, themes, preserve = true, initialView = nu
                         }
                     }, []);
                 }
-                finishThemeSetup(dispatch, newTheme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer);
+                const diff = Object.keys(missingThemeLayers).filter(entry => !(entry in newLayerNames));
+                if (!isEmpty(diff)) {
+                    dispatch(showNotification("missinglayers", LocaleUtils.tr("app.missinglayers", diff.join(", ")), NotificationType.WARN, true));
+                }
+                finishThemeSetup(dispatch, newTheme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer, initialTheme);
             });
         } else {
-            finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer);
+            if (!isEmpty(missingThemeLayers)) {
+                dispatch(showNotification("missinglayer", LocaleUtils.tr("app.missinglayers", Object.keys(missingThemeLayers).join(", ")), NotificationType.WARN, true));
+            }
+            finishThemeSetup(dispatch, theme, themes, layerConfigs, insertPos, permalinkLayers, externalLayerRestorer, visibleBgLayer, initialTheme);
         }
     };
 }

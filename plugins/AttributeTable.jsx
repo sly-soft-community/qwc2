@@ -1,5 +1,5 @@
 /**
- * Copyright 2021 Sourcepole AG
+ * Copyright 2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,9 +9,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import geojsonBbox from 'geojson-bounding-box';
 import isEmpty from 'lodash.isempty';
-import ContentEditable from 'react-contenteditable';
+import FileSaver from 'file-saver';
 import {getFeatureTemplate} from '../actions/editing';
 import {LayerRole} from '../actions/layers';
 import {zoomToExtent, zoomToPoint} from '../actions/map';
@@ -20,14 +19,16 @@ import EditComboField, {KeyValCache} from '../components/EditComboField';
 import EditUploadField from '../components/EditUploadField';
 import Icon from '../components/Icon';
 import ResizeableWindow from '../components/ResizeableWindow';
-import Spinner from '../components/Spinner';
 import NavBar from '../components/widgets/NavBar';
+import Spinner from '../components/Spinner';
+import TextInput from '../components/widgets/TextInput';
 import ConfigUtils from '../utils/ConfigUtils';
 import EditingInterface from '../utils/EditingInterface';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
+import VectorLayerUtils from '../utils/VectorLayerUtils';
 import './style/AttributeTable.css';
 
 /**
@@ -47,6 +48,7 @@ class AttributeTable extends React.Component {
         allowAddForGeometryLayers: PropTypes.bool,
         iface: PropTypes.object,
         layers: PropTypes.array,
+        mapBbox: PropTypes.object,
         mapCrs: PropTypes.string,
         mapScales: PropTypes.array,
         setCurrentTask: PropTypes.func,
@@ -81,7 +83,8 @@ class AttributeTable extends React.Component {
         sortField: null,
         deleteTask: null,
         newFeature: false,
-        confirmDelete: false
+        confirmDelete: false,
+        limitToExtent: false
     };
     constructor(props) {
         super(props);
@@ -100,6 +103,12 @@ class AttributeTable extends React.Component {
             this.setState(AttributeTable.defaultState);
         } else if (this.props.active && !prevProps.active && this.props.taskData && this.props.taskData.layer) {
             this.reload(this.props.taskData.layer);
+        }
+        // Reload conditions when limited to extent
+        if (this.props.active && this.state.limitToExtent && this.state.selectedLayer && (!prevState.limitToExtent || this.props.mapBbox !== prevProps.mapBbox)) {
+            this.reload();
+        } else if (this.props.active && !this.state.limitToExtent && prevState.limitToExtent) {
+            this.reload();
         }
     }
     render() {
@@ -232,6 +241,9 @@ class AttributeTable extends React.Component {
                         <input disabled={this.state.changedFeatureIdx !== null} onChange={ev => this.updateFilter("filterVal", ev.target.value, true)} type="text" value={this.state.filterVal} />
                         <button className="button" disabled={this.state.changedFeatureIdx !== null} onClick={() => this.updateFilter("filterVal", "")} value={this.state.filterValue}><Icon icon="clear" /></button>
                     </div>
+                    <div>
+                        <label><input checked={this.state.limitToExtent} onChange={(ev) => this.setState({limitToExtent: ev.target.checked})} type="checkbox" /> {LocaleUtils.tr("attribtable.limittoextent")}</label>
+                    </div>
                 </div>
             );
         }
@@ -264,7 +276,7 @@ class AttributeTable extends React.Component {
                                 );
                             })}
                         </select>
-                        <button className="button" disabled={editing || nolayer} onClick={() => this.reload()} title={LocaleUtils.tr("attribtable.reload")}>
+                        <button className="button" disabled={editing || nolayer || this.state.loading} onClick={() => this.reload()} title={LocaleUtils.tr("attribtable.reload")}>
                             <Icon icon="refresh" />
                         </button>
                         {showAddButton ? (
@@ -304,6 +316,9 @@ class AttributeTable extends React.Component {
                                 <span>{LocaleUtils.tr("attribtable.discard")}</span>
                             </button>
                         ) : null}
+                        <button className="button" disabled={isEmpty(this.state.features)} onClick={() => this.csvExport()} title={LocaleUtils.tr("attribtable.csvexport")}>
+                            <Icon icon="export" />
+                        </button>
                     </div>
                     <div className="attribtable-contents" ref={el => {this.attribTableContents = el;}}>
                         {table}
@@ -343,10 +358,12 @@ class AttributeTable extends React.Component {
     changeSelectedLayer = (value) => {
         this.setState({selectedLayer: value});
     };
-    reload = (layer = null) => {
+    reload = (layerName = null) => {
         this.setState((state) => {
-            const selectedLayer = layer || state.selectedLayer;
+            const selectedLayer = layerName || state.selectedLayer;
             KeyValCache.clear();
+            const layer = this.props.layers.find(l => l.role === LayerRole.THEME);
+            const bbox = this.state.limitToExtent ? this.props.mapBbox.bounds : null;
             this.props.iface.getFeatures(this.editLayerId(selectedLayer), this.props.mapCrs, (result) => {
                 if (result) {
                     const features = result.features || [];
@@ -356,8 +373,8 @@ class AttributeTable extends React.Component {
                     alert(LocaleUtils.tr("attribtable.loadfailed"));
                     this.setState({loading: false, features: [], filteredSortedFeatures: [], loadedLayer: ""});
                 }
-            });
-            return {...AttributeTable.defaultState, loading: true, selectedLayer: selectedLayer};
+            }, bbox, layer.filterParams?.[selectedLayer], layer.filterGeom);
+            return {...AttributeTable.defaultState, loading: true, selectedLayer: selectedLayer, limitToExtent: state.limitToExtent};
         });
     };
     sortBy = (field) => {
@@ -413,18 +430,11 @@ class AttributeTable extends React.Component {
         } else if (field.type === "file") {
             return (<EditUploadField constraints={constraints} dataset={this.editLayerId(this.state.selectedLayer)} disabled={disabled} fieldId={field.id} name={field.id} showThumbnails={false} updateField={updateField} updateFile={(fieldId, data) => {this.changedFiles[fieldId] = data; }} value={value} />);
         } else if (field.type === "text") {
-            if (constraints.multiline) {
-                input = [
-                    (<input className="attribtable-content-editable-hiddeninput" key={field.id + "_input"} name={field.id} readOnly required={constraints.required} type="text" value={value} />),
-                    (<ContentEditable className="attribtable-content-editable" disabled={disabled} html={value} key={field.id + "_div"} onChange={(ev) => updateField(field.id, ev.target.value)} />)
-                ];
-            } else {
-                input = (
-                    <input disabled={disabled} name={field.id}
-                        onChange={(ev) => updateField(field.id, ev.target.value)}
-                        required={constraints.required} type={field.type} value={value}/>
-                );
-            }
+            input = (
+                <TextInput disabled={disabled} multiline={constraints.multiline} name={field.id}
+                    onChange={(val) => updateField(field.id, val)}
+                    required={constraints.required} value={value} />
+            );
         } else {
             input = (
                 <input disabled={disabled} name={field.id} type={field.type} {...constraints}
@@ -578,7 +588,7 @@ class AttributeTable extends React.Component {
                 const zoom = MapUtils.computeZoom(this.props.mapScales, this.props.zoomLevel);
                 this.props.zoomToPoint(collection.features[0].geometry.coordinates, zoom, this.props.mapCrs);
             } else {
-                this.props.zoomToExtent(geojsonBbox(collection), this.props.mapCrs);
+                this.props.zoomToExtent(VectorLayerUtils.computeFeatureBBox(collection), this.props.mapCrs);
             }
         }
     };
@@ -662,7 +672,7 @@ class AttributeTable extends React.Component {
             };
             const resizeDo = resizeCol ? (event) => {
                 const delta = event.clientX - resize.anchor;
-                resize.element.style.minWidth = Math.max((resize.initial + delta), 16) + "px";
+                resize.element.style.width = Math.max((resize.initial + delta), 16) + "px";
             } : (event) => {
                 const delta = event.clientY - resize.anchor;
                 resize.element.style.height = Math.max((resize.initial + delta), 16) + "px";
@@ -679,6 +689,22 @@ class AttributeTable extends React.Component {
             ev.stopPropagation();
         }
     };
+    csvExport = () => {
+        const editConfig = this.props.theme.editConfig || {};
+        const currentEditConfig = editConfig[this.state.loadedLayer];
+        if (!currentEditConfig) {
+            return;
+        }
+
+        const fields = currentEditConfig.fields.filter(field => field.id !== 'id');
+        let data = "";
+        data += "id\t" + fields.map(field => field.id).join("\t") + "\n";
+
+        this.state.features.forEach(feature => {
+            data += feature.id + "\t" + fields.map(field => feature.properties[field.id]).join("\t") + "\n";
+        });
+        FileSaver.saveAs(new Blob([data], {type: "text/plain;charset=utf-8"}), this.state.loadedLayer + ".csv");
+    };
 }
 
 export default (iface = EditingInterface) => {
@@ -686,6 +712,7 @@ export default (iface = EditingInterface) => {
         active: state.task.id === "AttributeTable",
         iface: iface,
         layers: state.layers.flat,
+        mapBbox: state.map.bbox,
         mapCrs: state.map.projection,
         mapScales: state.map.scales,
         taskData: state.task.id === "AttributeTable" ? state.task.data : null,

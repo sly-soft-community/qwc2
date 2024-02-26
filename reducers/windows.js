@@ -1,5 +1,5 @@
 /**
- * Copyright 2020-2021 Sourcepole AG
+ * Copyright 2020-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -20,6 +20,9 @@ import {
 const defaultState = {
     stacking: [],
     splitScreen: {},
+    mapMargins: {
+        left: 0, top: 0, right: 0, bottom: 0
+    },
     entries: {}
 };
 
@@ -39,7 +42,7 @@ export default function windows(state = defaultState, action) {
             ...state,
             entries: {
                 ...state.entries,
-                [action.name]: {type: 'notification', text: action.text}
+                [action.name]: {type: 'notification', text: action.text, notificationType: action.notificationType, sticky: action.sticky}
             }
         };
     }
@@ -54,7 +57,12 @@ export default function windows(state = defaultState, action) {
     case CLOSE_ALL_WINDOWS: {
         return {
             ...state,
-            entries: {}
+            entries: Object.entries(state.entries).reduce((res, [name, entry]) => {
+                if (entry.sticky) {
+                    res[name] = entry;
+                }
+                return res;
+            }, {})
         };
     }
     case REGISTER_WINDOW: {
@@ -76,25 +84,27 @@ export default function windows(state = defaultState, action) {
         };
     }
     case SET_SPLIT_SCREEN: {
+        const newSplitScreen = {...state.splitScreen};
         if (action.side === null) {
-            const newSplitScreen = {...state.splitScreen};
             delete newSplitScreen[action.windowId];
-            return {
-                ...state,
-                splitScreen: newSplitScreen
-            };
         } else {
-            return {
-                ...state,
-                splitScreen: {
-                    ...state.splitScreen,
-                    [action.windowId]: {
-                        side: action.side,
-                        size: action.size
-                    }
-                }
+            newSplitScreen[action.windowId] = {
+                side: action.side,
+                size: action.size
             };
         }
+        const splitWindows = Object.values(newSplitScreen);
+        const mapMargins = {
+            right: splitWindows.filter(entry => entry.side === 'right').reduce((res, e) => Math.max(e.size, res), 0),
+            bottom: splitWindows.filter(entry => entry.side === 'bottom').reduce((res, e) => Math.max(e.size, res), 0),
+            left: splitWindows.filter(entry => entry.side === 'left').reduce((res, e) => Math.max(e.size, res), 0),
+            top: splitWindows.filter(entry => entry.side === 'top').reduce((res, e) => Math.max(e.size, res), 0)
+        };
+        return {
+            ...state,
+            splitScreen: newSplitScreen,
+            mapMargins: mapMargins
+        };
     }
     default:
         return state;

@@ -1,15 +1,23 @@
 {
   "locale": "cs-CZ",
   "messages": {
+    "app": {
+      "missingbg": "",
+      "missinglayers": "",
+      "missingpermalink": "",
+      "missingprojection": "",
+      "missingtheme": ""
+    },
     "appmenu": {
       "filter": "Hledat v menu...",
-      "menulabel": "Mapa & Nástroje",
       "items": {
+        "MapFilter": "",
         "AttributeTable": "Atributy",
         "Cyclomedia": "Cyclomedia",
         "DxfExport": "DXF Export",
         "Editing": "Úpravy",
         "FeatureForm": "Editační formulář",
+        "FeatureSearch": "",
         "Help": "Nápověda",
         "IdentifyPoint": "Informace o bodu",
         "IdentifyRegion": "Informace o oblasti",
@@ -21,8 +29,10 @@
         "Measure": "Měření",
         "MeasureLineString": "Změřit úsek",
         "MeasurePolygon": "Měřit mnohoúhelník",
+        "Portal": "",
         "Print": "Tisk",
         "RasterExport": "Export rastru",
+        "MapExport": "Export mapu",
         "Redlining": "Připomínkování",
         "Routing": "Trasy",
         "Share": "Sdílet odkaz",
@@ -31,11 +41,13 @@
         "Bookmark": "Záložky",
         "TimeManager": "",
         "Settings": "Nastavení"
-      }
+      },
+      "menulabel": "Mapa & Nástroje"
     },
     "attribtable": {
       "addfeature": "Přidat prvek",
       "commit": "Uložit změněný řádek",
+      "csvexport": "",
       "delete": "Smazat",
       "deletefailed": "Chyba při mazání jednoho nebo více prvků",
       "deletefeatures": "Smazat vybrané prvky",
@@ -44,6 +56,7 @@
       "formeditmode": "Otevřít editační formulář pro vybrané prvky",
       "geomnoadd": "Pro přidání nových prvků do této vrstvy použijte editační formulář",
       "layer": "Vrstva",
+      "limittoextent": "",
       "loadfailed": "Chyba při načítání prvků",
       "loading": "Načítání...",
       "nodelete": "Nemazat",
@@ -80,10 +93,12 @@
     },
     "copybtn": {
       "click_to_copy": "Zkopírovat do schránky",
-      "copied": "Zkopírováno"
+      "copied": "Zkopírováno",
+      "copyfailed": ""
     },
     "cyclomedia": {
       "clickonmap": "",
+      "initializing": "",
       "loaderror": "",
       "loading": "Načítání...",
       "login": "",
@@ -111,7 +126,6 @@
       "invalidform": "",
       "maximize": "Maximální",
       "minimize": "Minimální",
-      "nocompatpick": "",
       "noeditablelayers": "Needitovatelná vrstva.",
       "paint": "",
       "pick": "Výběr",
@@ -129,6 +143,12 @@
       "querying": "Načítání...",
       "title": "Editační formulář"
     },
+    "featuresearch": {
+      "noresults": "",
+      "query": "",
+      "select": "",
+      "title": ""
+    },
     "fileselector": {
       "files": "Soubory",
       "placeholder": "Vybrat soubor..."
@@ -136,9 +156,14 @@
     "heightprofile": {
       "asl": "m n. m.",
       "distance": "Vzdálenost",
+      "drawnodes": "",
+      "error": "",
       "export": "Export výškového profilu",
       "height": "Výška",
-      "loading": "Výpočet výškového profilu..."
+      "loading": "Výpočet výškového profilu...",
+      "loadingimage": "",
+      "print": "",
+      "title": ""
     },
     "identify": {
       "clipboard": "Zkopírovat do schránky",
@@ -164,6 +189,8 @@
       "localfile": "Soubor z počítače",
       "nofeatures": "Žádné prvku nebyly importovány.",
       "noresults": "Bez výsledku nebo nevalidní URL",
+      "notgeopdf": "",
+      "unknownproj": "",
       "url": "URL",
       "urlplaceholder": "Vložit URL pro WMS, WMTS, WFS..."
     },
@@ -221,6 +248,22 @@
       "loading": "Načítání...",
       "resetrotation": "Obnovit orientaci mapy"
     },
+    "mapexport": {
+      "configuration": "",
+      "format": "Formát:",
+      "resolution": "Rozlišení:",
+      "scale": "Měřítko",
+      "size": "Velikost",
+      "submit": "Export",
+      "usersize": "Vybrat na mapě...",
+      "wait": "Čekejte..."
+    },
+    "mapfilter": {
+      "geomfilter": "",
+      "timefilter": "",
+      "timefrom": "",
+      "timeto": ""
+    },
     "mapinfotooltip": {
       "elevation": "Nadmořská výška",
       "title": "Poloha"
@@ -239,6 +282,9 @@
       "metric": "Metricky",
       "pointLabel": "Poloha"
     },
+    "misc": {
+      "ctrlclickhint": ""
+    },
     "navbar": {
       "perpage": "na stránku"
     },
@@ -256,8 +302,13 @@
       "width": "",
       "windowtitle": ""
     },
+    "portal": {
+      "filter": "",
+      "menulabel": ""
+    },
     "print": {
       "atlasfeature": "",
+      "format": "Formát",
       "grid": "Mřížka:",
       "layout": "Rovržení:",
       "legend": "Legenda",
@@ -302,6 +353,7 @@
       "label": "Popisek",
       "layer": "Vrstva",
       "line": "Linie",
+      "markers": "",
       "measurements": "",
       "numericinput": "",
       "pick": "Výběr",
@@ -359,16 +411,23 @@
     },
     "search": {
       "all": "Vše",
+      "circleradius": "",
+      "clearfilter": "",
       "enablelayer": "Zapnout vrstvu",
       "existinglayer": "Vrstva v mapě již existuje",
+      "filter": "",
       "invisiblelayer": "Výsledek je ve vrstvě, která se nezobrazuje.",
+      "limittoarea": "",
       "more": "Více...",
+      "none": "",
       "noresults": "Nenalezeno",
       "providerselection": "Poskytovatelé vyhledávání",
       "search": "Hledat",
       "searchall": "Najít místo nebo přidat mapu...",
       "searchinprogress": "Hledání...",
       "searchreset": "Smazat hledání",
+      "solr": "",
+      "themelayers": "",
       "themes": "Témata"
     },
     "searchbox": {
@@ -393,22 +452,30 @@
       "title": "Informace o tématu"
     },
     "settings": {
+      "bookmarks": "",
       "colorscheme": "Barevné schéma",
       "confirmlang": "Pro změnu jazyka je třeba aplikaci znovu načíst. Pokračovat?",
+      "default": "",
+      "defaulttheme": "",
+      "defaultthemefailed": "",
       "language": "Jazyk",
-      "systemlang": "Systémový jazyk"
+      "systemlang": "Systémový jazyk",
+      "themes": ""
     },
     "share": {
       "QRCodeLinkTitle": "QR kód",
       "directLinkTitle": "Přes přímý odkaz",
+      "expires": "",
       "refresh": "Generovat odkaz",
       "shareTitle": "QWC2",
       "showpin": "Zobrazit bod",
       "socialIntro": "Na sociální síti"
     },
     "snapping": {
+      "edge": "",
       "loading": "Načítání...",
-      "snappingenabled": ""
+      "snappingenabled": "",
+      "vertex": ""
     },
     "themelayerslist": {
       "addlayer": "Přidat vrstvu",
@@ -418,6 +485,7 @@
     "themeswitcher": {
       "addlayerstotheme": "Přidat vrstvy do aktuálního tématu",
       "addtotheme": "Přidat k aktuálnímu tématu",
+      "changedefaulttheme": "",
       "confirmswitch": "Vrstvy které nejsou součástí tématu budou při přepnutí tématu ztraceny. Pokračovat?",
       "filter": "Filtr...",
       "match": {
@@ -435,7 +503,9 @@
       "displayfeatures": "",
       "displaylayers": "",
       "displayminimal": "",
+      "edit": "",
       "endtime": "",
+      "filterwarning": "",
       "future": "",
       "group": "",
       "groupnone": "",

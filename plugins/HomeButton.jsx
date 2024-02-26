@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -12,6 +12,7 @@ import {connect} from 'react-redux';
 import LocaleUtils from '../utils/LocaleUtils';
 import {zoomToExtent} from '../actions/map';
 import Icon from '../components/Icon';
+import ThemeUtils from '../utils/ThemeUtils';
 import './style/Buttons.css';
 
 
@@ -20,19 +21,25 @@ import './style/Buttons.css';
  */
 class HomeButton extends React.Component {
     static propTypes = {
-        currentTheme: PropTypes.object,
+        mapMargins: PropTypes.object,
         /** The position slot index of the map button, from the bottom (0: bottom slot). */
         position: PropTypes.number,
-        splitScreen: PropTypes.object,
+        theme: PropTypes.object,
+        /** Omit the button in themes matching one of these flags. */
+        themeFlagBlacklist: PropTypes.arrayOf(PropTypes.string),
+        /** Only show the button in themes matching one of these flags. */
+        themeFlagWhitelist: PropTypes.arrayOf(PropTypes.string),
         zoomToExtent: PropTypes.func
     };
     static defaultProps = {
         position: 5
     };
     render() {
-        const splitWindows = Object.values(this.props.splitScreen);
-        const right = splitWindows.filter(entry => entry.side === 'right').reduce((res, e) => Math.max(e.size, res), 0);
-        const bottom = splitWindows.filter(entry => entry.side === 'bottom').reduce((res, e) => Math.max(e.size, res), 0);
+        if (!ThemeUtils.themFlagsAllowed(this.props.theme, this.props.themeFlagWhitelist, this.props.themeFlagBlacklist)) {
+            return null;
+        }
+        const right = this.props.mapMargins.right;
+        const bottom = this.props.mapMargins.bottom;
         const style = {
             right: 'calc(1.5em + ' + right + 'px)',
             bottom: 'calc(' + bottom + 'px + ' + (5 + 4 * this.props.position) + 'em)'
@@ -45,16 +52,16 @@ class HomeButton extends React.Component {
         );
     }
     resetExtent = () => {
-        if (this.props.currentTheme) {
-            const bbox = this.props.currentTheme.initialBbox;
+        if (this.props.theme) {
+            const bbox = this.props.theme.initialBbox;
             this.props.zoomToExtent(bbox.bounds, bbox.crs);
         }
     };
 }
 
 export default connect((state) => ({
-    currentTheme: state.theme.current,
-    splitScreen: state.windows.splitScreen
+    mapMargins: state.windows.mapMargins,
+    theme: state.theme.current
 }), {
     zoomToExtent: zoomToExtent
 })(HomeButton);

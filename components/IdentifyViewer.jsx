@@ -1,5 +1,5 @@
 /**
- * Copyright 2016-2021 Sourcepole AG
+ * Copyright 2016-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -16,8 +16,8 @@ import omit from 'lodash.omit';
 import JSZip from 'jszip';
 import {LayerRole, addLayerFeatures, removeLayer} from '../actions/layers';
 import {setActiveLayerInfo} from '../actions/layerinfo';
-import {showIframeDialog} from '../actions/windows';
 import {zoomToExtent} from '../actions/map';
+import {openExternalUrl} from '../actions/task';
 import ConfigUtils from '../utils/ConfigUtils';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
 import LayerUtils from '../utils/LayerUtils';
@@ -46,15 +46,18 @@ const BuiltinExporters = [
         export: (json, callback) => {
             const featureCollection = {
                 type: "FeatureCollection",
-                features: Object.values(json).flat().map(entry => ({
-                    ...omit(entry, ['featurereport', 'displayfield', 'layername', 'layertitle', 'layerinfo', 'attribnames', 'clickPos', 'displayname', 'bbox']),
-                    crs: {
-                        type: "name",
-                        properties: {
-                            name: CoordinatesUtils.toOgcUrnCrs(entry.crs)
-                        }
+                features: Object.values(json).flat().map(entry => {
+                    const feature = omit(entry, ['featurereport', 'displayfield', 'layername', 'layertitle', 'layerinfo', 'attribnames', 'clickPos', 'displayname', 'bbox']);
+                    if (feature.geometry) {
+                        feature.crs = {
+                            type: "name",
+                            properties: {
+                                name: CoordinatesUtils.toOgcUrnCrs(entry.crs)
+                            }
+                        };
                     }
-                }))
+                    return feature;
+                })
             };
             const data = JSON.stringify(featureCollection, null, ' ');
             callback({
@@ -110,8 +113,10 @@ const BuiltinExporters = [
                     csv += '\n';
                 }
                 features.forEach(feature => {
-                    Object.values(feature.properties || {}).forEach((value) => {
-                        csv += String(value).replace('"', '""') + ';';
+                    Object.entries(feature.properties || {}).forEach(([attrib, value]) => {
+                        if (attrib !== "htmlContent" && attrib !== "htmlContentInline") {
+                            csv += String(value).replace('"', '""') + ';';
+                        }
                     });
                     if (feature.geometry) {
                         csv += VectorLayerUtils.geoJSONGeomToWkt(feature.geometry);
@@ -149,9 +154,11 @@ class IdentifyViewer extends React.Component {
         addLayerFeatures: PropTypes.func,
         attributeCalculator: PropTypes.func,
         attributeTransform: PropTypes.func,
+        collapsible: PropTypes.bool,
         customExporters: PropTypes.array,
         displayResultTree: PropTypes.bool,
-        enableExport: PropTypes.bool,
+        enableExport: PropTypes.oneOfType([PropTypes.bool, PropTypes.array]),
+        exportGeometry: PropTypes.bool,
         identifyResults: PropTypes.object,
         iframeDialogsInitiallyDocked: PropTypes.bool,
         layers: PropTypes.array,
@@ -160,28 +167,34 @@ class IdentifyViewer extends React.Component {
         removeLayer: PropTypes.func,
         replaceImageUrls: PropTypes.bool,
         setActiveLayerInfo: PropTypes.func,
-        showIframeDialog: PropTypes.func,
+        openExternalUrl: PropTypes.func,
+        showLayerTitles: PropTypes.bool,
         theme: PropTypes.object,
-        zoomToExtent: PropTypes.func
+        zoomToExtent: PropTypes.func,
+        highlightAllResults: PropTypes.bool
     };
     static defaultProps = {
         longAttributesDisplay: 'ellipsis',
         customExporters: [],
         displayResultTree: true,
         attributeCalculator: (/* layer, feature */) => { return []; },
-        attributeTransform: (name, value /* , layer, feature */) => value
+        attributeTransform: (name, value /* , layer, feature */) => value,
+        showLayerTitles: true,
+        highlightAllResults: true
     };
     state = {
         expanded: {},
+        expandedResults: {},
         resultTree: {},
         currentResult: null,
         currentLayer: null,
-        exportFormat: 'json'
+        exportFormat: 'geojson'
     };
     constructor(props) {
         super(props);
         this.currentResultElRef = null;
         this.scrollIntoView = false;
+        this.state.exportFormat = !Array.isArray(props.enableExport) || props.enableExport.includes('geojson') ? 'geojson' : props.enableExport[0];
     }
     componentDidMount() {
         this.updateResultTree();
@@ -220,12 +233,12 @@ class IdentifyViewer extends React.Component {
         });
     };
     setHighlightedResults = (results, resultTree) => {
-        if (!results) {
+        if (!results && this.props.highlightAllResults) {
             results = Object.keys(resultTree).reduce((res, layer) => {
                 return res.concat(resultTree[layer].map(result => ({...result, id: layer + "." + result.id})));
             }, []);
         }
-        results = results.filter(result => result.type.toLowerCase() === "feature");
+        results = (results || []).filter(result => result.type.toLowerCase() === "feature");
         if (!isEmpty(results)) {
             const layer = {
                 id: "identifyslection",
@@ -300,6 +313,11 @@ class IdentifyViewer extends React.Component {
     export = (json, clipboard = false) => {
         const exporter = [...BuiltinExporters, ...this.props.customExporters].find(entry => entry.id === this.state.exportFormat);
         if (exporter) {
+            if (!this.props.exportGeometry) {
+                json = Object.entries(json).reduce((res, [layerId, features]) => (
+                    {...res, [layerId]: features.map(feature => omit(feature, ['geometry']))}
+                ), {});
+            }
             exporter.export(json, (result) => {
                 if (clipboard && exporter.allowClipboard) {
                     navigator.clipboard.writeText(result.data);
@@ -322,7 +340,7 @@ class IdentifyViewer extends React.Component {
                 >
                     <span className="clickable" onClick={()=> this.toggleExpanded(layer, true)}><b>{results[0].layertitle}</b></span>
                     <Icon className="identify-remove-result" icon="minus-sign" onClick={() => this.removeResultLayer(layer)} />
-                    {this.props.enableExport ? (<Icon className="identify-export-result" icon="export" onClick={() => this.exportResultLayer(layer)} />) : null}
+                    {this.props.enableExport === true || !isEmpty(this.props.enableExport) ? (<Icon className="identify-export-result" icon="export" onClick={() => this.exportResultLayer(layer)} />) : null}
                 </div>
                 <div className="identify-layer-entries">
                     {results.map(result => this.renderResult(layer, result))}
@@ -340,7 +358,7 @@ class IdentifyViewer extends React.Component {
             >
                 <span className={this.state.currentResult === result ? "active clickable" : "clickable"} onClick={()=> this.setCurrentResult(layer, result)} ref={ref}>{result.displayname}</span>
                 <Icon className="identify-remove-result" icon="minus-sign" onClick={() => this.removeResult(layer, result)} />
-                {this.props.enableExport ? (<Icon className="identify-export-result" icon="export" onClick={() => this.exportResult(layer, result)} />) : null}
+                {this.props.enableExport === true || !isEmpty(this.props.enableExport) ? (<Icon className="identify-export-result" icon="export" onClick={() => this.exportResult(layer, result)} />) : null}
             </div>
         );
     };
@@ -450,18 +468,26 @@ class IdentifyViewer extends React.Component {
         if (result.bbox && result.crs) {
             zoomToFeatureButton = (<Icon icon="zoom" onClick={() => this.props.zoomToExtent(result.bbox, result.crs)} />);
         }
+        const key = result + ":" + result.id;
+        const expanded = this.state.expandedResults[key];
         return (
             <div className={resultClass} key="results-attributes">
                 <div className="identify-result-title">
-                    <Icon icon="minus" onClick={() => this.removeResult(layer, result)} />
-                    <span>{result.layertitle + ": " + result.displayname}</span>
+                    {this.props.collapsible ? (
+                        <Icon icon={expanded ? "tree_minus" : "tree_plus"} onClick={() => this.setState(state => ({expandedResults: {...state.expandedResults, [key]: !expanded}}))} />
+                    ) : (
+                        <Icon icon="minus" onClick={() => this.removeResult(layer, result)} />
+                    )}
+                    <span>{(this.props.showLayerTitles ? (result.layertitle + ": ") : "") + result.displayname}</span>
                     {zoomToFeatureButton}
                     <Icon icon="info-sign" onClick={() => this.showLayerInfo(layer, result)} />
                 </div>
-                <div className="identify-result-container">
-                    {resultbox}
-                    {extraattribs}
-                </div>
+                {this.props.collapsible && !expanded ? null : (
+                    <div className="identify-result-container">
+                        {resultbox}
+                        {extraattribs}
+                    </div>
+                )}
             </div>
         );
     };
@@ -503,15 +529,19 @@ class IdentifyViewer extends React.Component {
         return (
             <div className="identify-body" ref={el => { if (el) el.style.background = 'inherit'; } }>
                 {body}
-                {this.props.enableExport ? (
+                {this.props.enableExport === true || !isEmpty(this.props.enableExport) ? (
                     <div className="identify-buttonbox">
                         <span className="identify-buttonbox-spacer" />
                         <span>{LocaleUtils.tr("identify.exportformat")}&nbsp;</span>
                         <select className="combo identify-export-format" onChange={ev => this.setState({exportFormat: ev.target.value})} value={this.state.exportFormat}>
-                            {Object.values(BuiltinExporters).map(entry => (
+                            {Object.values(BuiltinExporters).filter(entry => {
+                                return !Array.isArray(this.props.enableExport) || this.props.enableExport.includes(entry.id);
+                            }).map(entry => (
                                 <option key={entry.id} value={entry.id}>{entry.title ?? LocaleUtils.tr(entry.titleMsgId)}</option>
                             ))}
-                            {Object.values(this.props.customExporters).map(entry => (
+                            {Object.values(this.props.customExporters).filter(entry => {
+                                return !Array.isArray(this.props.enableExport) || this.props.enableExport.includes(entry.id);
+                            }).map(entry => (
                                 <option key={entry.id} value={entry.id}>{entry.title ?? LocaleUtils.tr(entry.titleMsgId)}</option>
                             ))}
                         </select>
@@ -622,24 +652,8 @@ class IdentifyViewer extends React.Component {
         ev.preventDefault();
     };
     attributeLinkClicked = (ev) => {
-        if (ev.currentTarget.target.startsWith(":")) {
-            const target = ev.target.target.split(":");
-            const options = target.slice(2).reduce((res, cur) => {
-                const parts = cur.split("=");
-                if (parts.length === 2) {
-                    const value = parseFloat(parts[1]);
-                    res[parts[0]] = isNaN(value) ? parts[1] : value;
-                }
-                return res;
-            }, {});
-            if (target[1] === "iframedialog") {
-                if (this.props.iframeDialogsInitiallyDocked) {
-                    options.docked = true;
-                }
-                this.props.showIframeDialog(target[2], ev.target.href, options);
-                ev.preventDefault();
-            }
-        }
+        this.props.openExternalUrl(ev.target.href, ev.target.target, {docked: this.props.iframeDialogsInitiallyDocked});
+        ev.preventDefault();
     };
 }
 
@@ -653,6 +667,6 @@ export default connect(selector, {
     addLayerFeatures: addLayerFeatures,
     removeLayer: removeLayer,
     setActiveLayerInfo: setActiveLayerInfo,
-    showIframeDialog: showIframeDialog,
+    openExternalUrl: openExternalUrl,
     zoomToExtent: zoomToExtent
 })(IdentifyViewer);

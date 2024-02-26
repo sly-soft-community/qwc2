@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021 Sourcepole AG
+ * Copyright 2017-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -20,10 +20,12 @@ import Icon from '../components/Icon';
 import TaskBar from '../components/TaskBar';
 import ButtonBar from '../components/widgets/ButtonBar';
 import ColorButton from '../components/widgets/ColorButton';
+import ComboBox from '../components/widgets/ComboBox';
 import MenuButton from '../components/widgets/MenuButton';
 import VectorLayerPicker from '../components/widgets/VectorLayerPicker';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
+import {END_MARKERS} from '../utils/FeatureStyles';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
 import './style/Redlining.css';
 
@@ -46,8 +48,9 @@ class Redlining extends React.Component {
         setSnappingConfig: PropTypes.func,
         /** Whether snapping is available when editing. */
         snapping: PropTypes.bool,
-        /** Whether snapping is enabled by default when editing. */
-        snappingActive: PropTypes.bool
+        /** Whether snapping is enabled by default when editing.
+         *  Either `false`, `edge`, `vertex` or `true` (i.e. both vertex and edge). */
+        snappingActive: PropTypes.oneOfType([PropTypes.bool, PropTypes.string])
     };
     static defaultProps = {
         allowGeometryLabels: true,
@@ -67,8 +70,13 @@ class Redlining extends React.Component {
         if (prevProps.redlining.geomType !== this.props.redlining.geomType && this.props.redlining.geomType === 'Text' && !this.state.selectText) {
             this.setState({selectText: true});
         }
-        if (!this.props.layers.find(layer => layer.id === this.props.redlining.layer) && this.props.redlining.layer !== 'redlining') {
-            this.props.changeRedliningState({layer: 'redlining', layerTitle: 'Redlining'});
+        if (!this.props.layers.find(layer => layer.id === this.props.redlining.layer)) {
+            const vectorLayers = this.props.layers.filter(layer => layer.type === "vector" && layer.role === LayerRole.USERLAYER && !layer.readonly);
+            if (vectorLayers.length >= 1) {
+                this.props.changeRedliningState({layer: vectorLayers[0].id, layerTitle: vectorLayers[0].title});
+            } else if (this.props.redlining.layer !== 'redlining') {
+                this.props.changeRedliningState({layer: 'redlining', layerTitle: 'Redlining'});
+            }
         }
     }
     componentWillUnmount() {
@@ -139,10 +147,11 @@ class Redlining extends React.Component {
             editButtons.push(plugin.cfg);
         }
         let vectorLayers = this.props.layers.filter(layer => layer.type === "vector" && layer.role === LayerRole.USERLAYER && !layer.readonly);
-        // Ensure list always contains "Redlining" layer
-        if (!vectorLayers.find(layer => layer.id === 'redlining')) {
+        // Ensure list always contains at least a "Redlining" layer
+        if (vectorLayers.length === 0) {
             vectorLayers = [{id: 'redlining', title: 'Redlining'}, ...vectorLayers];
         }
+        const haveLayer = this.props.layers.find(l => l.id === this.props.redlining.layer) !== undefined;
 
         const activePlugin = Object.values(this.props.plugins || {}).find(plugin => plugin.cfg.key === this.props.redlining.action);
         const controls = activePlugin ? (<activePlugin.controls />) : this.renderStandardControls();
@@ -175,7 +184,7 @@ class Redlining extends React.Component {
                     </div>
                     <div className="redlining-group">
                         <div>&nbsp;</div>
-                        <MenuButton className="redlining-export-menu" menuIcon="export" onActivate={this.export}>
+                        <MenuButton className="redlining-export-menu" disabled={!haveLayer} menuIcon="export" onActivate={this.export}>
                             <div className="redlining-export-menu-entry" key="GeoJSON" value="geojson">GeoJSON</div>
                             <div className="redlining-export-menu-entry" key="KML" value="kml">KML</div>
                         </MenuButton>
@@ -249,6 +258,27 @@ class Redlining extends React.Component {
                         mobile onChange={(nr) => this.updateRedliningStyle({size: nr})} precision={0} step={1}
                         strict value={this.props.redlining.style.size}/>
                 </span>
+                {this.props.redlining.geomType === 'LineString' ? (
+                    <span>
+                        <span>{LocaleUtils.tr("redlining.markers")}:&nbsp;</span>
+                        <ComboBox className="redlining-marker-combo" onChange={value => this.updateRedliningStyle({headmarker: value})} value={this.props.redlining.style.headmarker || ""}>
+                            <div className="redlining-marker-combo-entry" value="" />
+                            {Object.entries(END_MARKERS).map(([key, params]) => (
+                                <div className="redlining-marker-combo-entry" key={key} value={key}>
+                                    <img src={params.src} style={{transform: 'rotate(' + params.baserotation + 'deg)'}}/>
+                                </div>
+                            ))}
+                        </ComboBox>
+                        <ComboBox className="redlining-marker-combo" onChange={value => this.updateRedliningStyle({tailmarker: value})} value={this.props.redlining.style.tailmarker || ""}>
+                            <div className="redlining-marker-combo-entry" value="" />
+                            {Object.entries(END_MARKERS).map(([key, params]) => (
+                                <div className="redlining-marker-combo-entry" key={key} value={key}>
+                                    <img src={params.src} style={{transform: 'rotate(' + (180 + params.baserotation) + 'deg)'}}/>
+                                </div>
+                            ))}
+                        </ComboBox>
+                    </span>
+                ) : null}
                 {this.props.redlining.geomType !== 'Text' ? (
                     <button
                         className={"button" + (this.props.redlining.measurements ? " pressed" : "")}

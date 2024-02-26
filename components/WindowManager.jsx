@@ -1,5 +1,5 @@
 /**
- * Copyright 2020-2021 Sourcepole AG
+ * Copyright 2020-2024 Sourcepole AG
  * All rights reserved.
  *
  * This source code is licensed under the BSD-style license found in the
@@ -9,9 +9,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+import Icon from './Icon';
 import ResizeableWindow from './ResizeableWindow';
-import MessageBar from './MessageBar';
-import {closeWindow, closeAllWindows} from '../actions/windows';
+import {closeWindow, closeAllWindows, NotificationType} from '../actions/windows';
 
 import './style/WindowManager.css';
 
@@ -28,15 +28,24 @@ class WindowManager extends React.Component {
         }
     }
     render() {
-        return Object.entries(this.props.windows).map(([key, data]) => {
-            if (data.type === "iframedialog") {
-                return this.renderIframeDialog(key, data);
-            } else if (data.type === "notification") {
-                return this.renderNotification(key, data);
-            } else {
+        let notificationIndex = 0;
+        return [
+            ...Object.entries(this.props.windows).map(([key, data]) => {
+                if (data.type === "iframedialog") {
+                    return this.renderIframeDialog(key, data);
+                }
                 return null;
-            }
-        });
+            }),
+            (<div className="windows-notification-container" key="notifications-container">
+                {Object.entries(this.props.windows).map(([key, data]) => {
+                    if (data.type === "notification") {
+                        return this.renderNotification(key, data, notificationIndex++);
+                    } else {
+                        return null;
+                    }
+                })}
+            </div>)
+        ];
     }
     renderIframeDialog = (key, data) => {
         const extraControls = [];
@@ -45,22 +54,36 @@ class WindowManager extends React.Component {
         }
         const dockable = this.boolVal(data.options.dockable) !== false;
         const docked = this.boolVal(data.options.docked) !== false;
+        const splitScreenWhenDocked = this.boolVal(data.options.splitScreenWhenDocked) !== false;
         return (
-            <ResizeableWindow dockable={dockable || docked} extraControls={extraControls} icon={data.options.icon || ""}
+            <ResizeableWindow
+                baseZIndex={data.options.zIndex || 10}
+                dockable={dockable || docked}
+                extraControls={extraControls} icon={data.options.icon || ""}
                 initialHeight={data.options.h || 480}
                 initialWidth={data.options.w || 640}
                 initiallyDocked={docked} key={key}
                 onClose={() => this.closeWindow(key)}
+                splitScreenWhenDocked={splitScreenWhenDocked}
                 title={data.options.title || "windows." + key}>
                 <iframe className="windows-iframe-dialog-body" name={key} role="body" src={data.url} />
             </ResizeableWindow>
         );
     };
     renderNotification = (key, data) => {
+        let className = 'windows-notification-info';
+        if (data.notificationType === NotificationType.WARN) {
+            className = 'windows-notification-warn';
+        } else if (data.notificationType === NotificationType.ERROR) {
+            className = 'windows-notification-error';
+        }
         return (
-            <MessageBar hideOnTaskChange key={key} onHide={() => this.closeWindow(key)}>
-                <span role="body">{data.text}</span>
-            </MessageBar>
+            <div className={className} key={key}>
+                <div>{data.text}</div>
+                <span>
+                    <Icon icon="remove" onClick={() => this.closeWindow(key)} size="large"/>
+                </span>
+            </div>
         );
     };
     closeWindow = (key) => {
