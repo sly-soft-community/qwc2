@@ -75,7 +75,10 @@ export default {
                     params: queryParameters,
                     ratio: options.ratio || 1,
                     hidpi: ConfigUtils.getConfigProp("wmsHidpi") !== false ? true : false,
-                    imageLoadFunction: (image, src) => wmsImageLoadFunction(image.getImage(), src),
+                    imageLoadFunction: (image, src) => { 
+                        console.log(image, src)
+                        return wmsImageLoadFunction(image.getImage(), src)
+                    },
                     ...(options.sourceConfig || {})
                 }),
                 ...(options.layerConfig || {})

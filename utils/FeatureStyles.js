@@ -186,7 +186,7 @@ export default {
                     anchorYUnits: 'fraction',
                     opacity: opts.opacity,
                     crossOrigin: opts.crossOrigin,
-                    src: opts.iconSrc,
+                    src: opts.iconSrc.src,
                     scale: opts.scale,
                     color: opts.color
                 }),
