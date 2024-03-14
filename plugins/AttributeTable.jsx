@@ -7,10 +7,12 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import isEmpty from 'lodash.isempty';
+
 import FileSaver from 'file-saver';
+import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {getFeatureTemplate} from '../actions/editing';
 import {LayerRole} from '../actions/layers';
 import {zoomToExtent, zoomToPoint} from '../actions/map';
@@ -19,16 +21,17 @@ import EditComboField, {KeyValCache} from '../components/EditComboField';
 import EditUploadField from '../components/EditUploadField';
 import Icon from '../components/Icon';
 import ResizeableWindow from '../components/ResizeableWindow';
-import NavBar from '../components/widgets/NavBar';
 import Spinner from '../components/Spinner';
+import NavBar from '../components/widgets/NavBar';
 import TextInput from '../components/widgets/TextInput';
 import ConfigUtils from '../utils/ConfigUtils';
-import EditingInterface from '../utils/EditingInterface';
 import CoordinatesUtils from '../utils/CoordinatesUtils';
+import EditingInterface from '../utils/EditingInterface';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
+
 import './style/AttributeTable.css';
 
 /**
@@ -46,6 +49,7 @@ class AttributeTable extends React.Component {
         active: PropTypes.bool,
         /** Whether to allow adding records for datasets which have a geometry column. */
         allowAddForGeometryLayers: PropTypes.bool,
+        filter: PropTypes.object,
         iface: PropTypes.object,
         layers: PropTypes.array,
         mapBbox: PropTypes.object,
@@ -55,6 +59,8 @@ class AttributeTable extends React.Component {
         setCurrentTaskBlocked: PropTypes.func,
         /** Whether to show a button to open the edit form for selected layer. Requires the Editing plugin to be enabled. */
         showEditFormButton: PropTypes.bool,
+        /** Whether to show the "Limit to extent" checkbox */
+        showLimitToExtent: PropTypes.bool,
         taskData: PropTypes.object,
         theme: PropTypes.object,
         /** The zoom level for zooming to point features. */
@@ -241,9 +247,11 @@ class AttributeTable extends React.Component {
                         <input disabled={this.state.changedFeatureIdx !== null} onChange={ev => this.updateFilter("filterVal", ev.target.value, true)} type="text" value={this.state.filterVal} />
                         <button className="button" disabled={this.state.changedFeatureIdx !== null} onClick={() => this.updateFilter("filterVal", "")} value={this.state.filterValue}><Icon icon="clear" /></button>
                     </div>
-                    <div>
-                        <label><input checked={this.state.limitToExtent} onChange={(ev) => this.setState({limitToExtent: ev.target.checked})} type="checkbox" /> {LocaleUtils.tr("attribtable.limittoextent")}</label>
-                    </div>
+                    {this.props.showLimitToExtent ? (
+                        <div>
+                            <label><input checked={this.state.limitToExtent} onChange={(ev) => this.setState({limitToExtent: ev.target.checked})} type="checkbox" /> {LocaleUtils.tr("attribtable.limittoextent")}</label>
+                        </div>
+                    ) : null}
                 </div>
             );
         }
@@ -362,7 +370,6 @@ class AttributeTable extends React.Component {
         this.setState((state) => {
             const selectedLayer = layerName || state.selectedLayer;
             KeyValCache.clear();
-            const layer = this.props.layers.find(l => l.role === LayerRole.THEME);
             const bbox = this.state.limitToExtent ? this.props.mapBbox.bounds : null;
             this.props.iface.getFeatures(this.editLayerId(selectedLayer), this.props.mapCrs, (result) => {
                 if (result) {
@@ -373,7 +380,7 @@ class AttributeTable extends React.Component {
                     alert(LocaleUtils.tr("attribtable.loadfailed"));
                     this.setState({loading: false, features: [], filteredSortedFeatures: [], loadedLayer: ""});
                 }
-            }, bbox, layer.filterParams?.[selectedLayer], layer.filterGeom);
+            }, bbox, this.props.filter.filterParams?.[selectedLayer], this.props.filter.filterGeom);
             return {...AttributeTable.defaultState, loading: true, selectedLayer: selectedLayer, limitToExtent: state.limitToExtent};
         });
     };
@@ -712,6 +719,7 @@ export default (iface = EditingInterface) => {
         active: state.task.id === "AttributeTable",
         iface: iface,
         layers: state.layers.flat,
+        filter: state.layers.filter,
         mapBbox: state.map.bbox,
         mapCrs: state.map.projection,
         mapScales: state.map.scales,

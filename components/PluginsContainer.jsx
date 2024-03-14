@@ -7,8 +7,10 @@
  * LICENSE file in the root directory of this source tree.
  */
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
+import PropTypes from 'prop-types';
+
 import WindowManager from './WindowManager';
 
 import './style/PluginsContainer.css';
@@ -18,7 +20,8 @@ class PluginsContainer extends React.Component {
         mode: PropTypes.string,
         plugins: PropTypes.object,
         pluginsAppConfig: PropTypes.object,
-        pluginsConfig: PropTypes.object
+        pluginsConfig: PropTypes.object,
+        theme: PropTypes.object
     };
     renderPlugins = (pluginsConfig) => {
         return pluginsConfig.map((pluginConf, idx) => {
@@ -28,7 +31,9 @@ class PluginsContainer extends React.Component {
                 console.warn("Non-existing plugin: " + pluginConf.name);
                 return null;
             }
-            const cfg = pluginConf.cfg || {};
+            const themeDevicePluginConfig = this.props.theme?.config?.[this.props.mode]?.plugins?.[pluginConf.name] || {};
+            const themePluginConfig = this.props.theme?.config?.plugins?.[pluginConf.name] || {};
+            const cfg = {...(pluginConf.cfg || {}), ...themePluginConfig, ...themeDevicePluginConfig};
             const appCfg = this.props.pluginsAppConfig[pluginConf.name + "Plugin"] || {};
             return (<Plugin key={pluginConf.name + idx} {...cfg} {...appCfg} />);
         });
@@ -48,5 +53,6 @@ class PluginsContainer extends React.Component {
 
 export default connect((state) => ({
     pluginsConfig: state.localConfig.plugins,
-    mode: state.browser.mobile ? 'mobile' : 'desktop'
+    mode: state.browser.mobile ? 'mobile' : 'desktop',
+    theme: state.theme.current
 }))(PluginsContainer);

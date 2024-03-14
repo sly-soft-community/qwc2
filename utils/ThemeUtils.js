@@ -6,13 +6,13 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+import {remove as removeDiacritics} from 'diacritics';
 import isEmpty from 'lodash.isempty';
 import url from 'url';
 import {v4 as uuidv4} from 'uuid';
-import {remove as removeDiacritics} from 'diacritics';
 
-import {SearchResultType} from '../actions/search';
 import {LayerRole} from '../actions/layers';
+import {SearchResultType} from '../actions/search';
 import {NotificationType, showNotification} from '../actions/windows';
 import ConfigUtils from './ConfigUtils';
 import LayerUtils from './LayerUtils';
@@ -99,7 +99,7 @@ const ThemeUtils = {
         }
         return bgLayers;
     },
-    createThemeLayer(theme, themes, role = LayerRole.THEME, subLayers = []) {
+    createThemeLayer(theme, themes, role = LayerRole.THEME, subLayers = null) {
         const urlParts = url.parse(theme.url, true);
         // Resolve relative urls
         if (!urlParts.host) {
@@ -107,6 +107,7 @@ const ThemeUtils = {
             urlParts.protocol = locationParts.protocol;
             urlParts.host = locationParts.host;
         }
+        const sublayerNames = LayerUtils.getSublayerNames({sublayers: subLayers ?? theme.sublayers});
         const baseParams = urlParts.query;
         let layer = {
             type: "wms",
@@ -118,7 +119,7 @@ const ThemeUtils = {
             name: theme.name,
             title: theme.title,
             bbox: theme.bbox,
-            sublayers: (Array.isArray(subLayers) && subLayers.length) ? subLayers : theme.sublayers,
+            sublayers: subLayers ?? theme.sublayers,
             tiled: theme.tiled,
             tileSize: theme.tileSize,
             ratio: !theme.tiled ? 1 : undefined,
@@ -131,6 +132,8 @@ const ThemeUtils = {
             printUrl: ThemeUtils.inheritBaseUrlParams(theme.printUrl, theme.url, baseParams),
             featureInfoUrl: ThemeUtils.inheritBaseUrlParams(theme.featureInfoUrl, theme.url, baseParams),
             infoFormats: theme.infoFormats,
+            layerTreeHiddenSublayers: theme.layerTreeHiddenSublayers,
+            predefinedFilters: (theme.predefinedFilters || []).filter(entry => Object.keys(entry.filter).find(name => sublayerNames.includes(name))),
             externalLayerMap: {
                 ...theme.externalLayerMap,
                 ...(theme.externalLayers || []).reduce((res, cur) => {

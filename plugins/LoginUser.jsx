@@ -7,25 +7,41 @@
  */
 
 import React from 'react';
+import {connect} from 'react-redux';
+
+import PropTypes from 'prop-types';
+
 import Icon from '../components/Icon';
 import ConfigUtils from '../utils/ConfigUtils';
+
 import './style/LoginUser.css';
 
 
 /**
  * Displays the currently logged in user.
  */
-export default class LoginUser extends React.Component {
+class LoginUser extends React.Component {
+    static propTypes = {
+        mapMargins: PropTypes.object
+    };
     render() {
         const username = ConfigUtils.getConfigProp("username");
+        const style = {
+            right: this.props.mapMargins.right
+        };
         if (!username) {
             return null;
         }
         return (
-            <div className="login-user">
+            <div className="login-user" style={style}>
                 <Icon icon="login" />
                 <span>{username}</span>
             </div>
         );
     }
 }
+
+export default connect((state) => ({
+    mapMargins: state.windows.mapMargins
+}))(LoginUser);
+

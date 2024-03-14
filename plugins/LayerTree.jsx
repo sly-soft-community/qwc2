@@ -7,16 +7,18 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import classnames from 'classnames';
-import isEmpty from 'lodash.isempty';
 import Sortable from 'react-sortablejs';
+
+import classnames from 'classnames';
 import FileSaver from 'file-saver';
-import {LayerRole, changeLayerProperty, removeLayer, reorderLayer, setSwipe, addLayerSeparator} from '../actions/layers';
+import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {setActiveLayerInfo} from '../actions/layerinfo';
-import {setActiveServiceInfo} from '../actions/serviceinfo';
+import {LayerRole, changeLayerProperty, removeLayer, reorderLayer, setSwipe, addLayerSeparator} from '../actions/layers';
 import {toggleMapTips, zoomToExtent} from '../actions/map';
+import {setActiveServiceInfo} from '../actions/serviceinfo';
 import Icon from '../components/Icon';
 import ImportLayer from '../components/ImportLayer';
 import LayerInfoWindow from '../components/LayerInfoWindow';
@@ -30,6 +32,7 @@ import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
 import MiscUtils from '../utils/MiscUtils';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
+
 import './style/LayerTree.css';
 
 
@@ -63,6 +66,7 @@ class LayerTree extends React.Component {
         /** Additional parameters to pass to the GetLegendGraphics request- */
         extraLegendParameters: PropTypes.string,
         fallbackDrag: PropTypes.bool,
+        filter: PropTypes.object,
         /** Whether to display a flat layer tree, omitting any groups. */
         flattenGroups: PropTypes.bool,
         /** Whether to display unchecked layers gray in the layertree. */
@@ -256,6 +260,9 @@ class LayerTree extends React.Component {
         if (this.state.filtervisiblelayers && !sublayer.visibility) {
             return null;
         }
+        if (Array.isArray(layer.layerTreeHiddenSublayers) && layer.layerTreeHiddenSublayers.includes(sublayer.name)) {
+            return null;
+        }
         const allowRemove = ConfigUtils.getConfigProp("allowRemovingThemeLayers", this.props.theme) === true || layer.role !== LayerRole.THEME;
         const allowReordering = ConfigUtils.getConfigProp("allowReorderingLayers", this.props.theme) === true;
         let checkboxstate = sublayer.visibility === true ? 'checked' : 'unchecked';
@@ -324,7 +331,7 @@ class LayerTree extends React.Component {
                     {legendicon}
                     {title}
                     {sublayer.queryable && this.props.showQueryableIcon ? (queryableicon) : null}
-                    {sublayer.name in (layer.filterParams || {}) || layer.filterGeom ? (<Icon icon="filter" />) : null}
+                    {sublayer.name in (this.props.filter.filterParams || {}) || this.props.filter.filterGeom ? (<Icon icon="filter" />) : null}
                     {this.props.loadingLayers.includes(layer.id) ? (<Spinner />) : null}
                     <span className="layertree-item-spacer" />
                     {allowOptions && !this.props.infoInSettings ? infoButton : null}
@@ -748,6 +755,7 @@ const selector = (state) => ({
     ie: state.browser.ie,
     fallbackDrag: state.browser.ie || (state.browser.platform === 'Win32' && state.browser.chrome),
     layers: state.layers.flat,
+    filter: state.layers.filter,
     loadingLayers: state.layers.loading,
     map: state.map,
     mapScale: MapUtils.computeForZoom(state.map.scales, state.map.zoom),

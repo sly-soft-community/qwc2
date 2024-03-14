@@ -83,7 +83,8 @@
       "remove": "Rimuovi segnalibro",
       "removefailed": "Impossibile rimuovere il segnalibro",
       "savefailed": "Impossibile aggiornare il segnalibro",
-      "update": "Aggiorna segnalibro"
+      "update": "Aggiorna segnalibro",
+      "zoomToExtent": ""
     },
     "bottombar": {
       "mousepos_label": "Coordinate",
@@ -259,7 +260,13 @@
       "wait": "Attendere..."
     },
     "mapfilter": {
+      "addcustomfilter": "Aggiungi filtro personalizzato",
+      "brokenrendering": "Il rendering della mappa potrebbe essere interrotto a causa di un'espressione filtro invalida",
+      "cancel": "Annulla",
       "geomfilter": "Geometrico",
+      "invalidfilter": "Espressione filtro non valida",
+      "save": "Salva",
+      "selectlayer": "Seleziona livello",
       "timefilter": "Temporale",
       "timefrom": "Da",
       "timeto": "A"

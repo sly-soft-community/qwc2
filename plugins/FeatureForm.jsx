@@ -7,9 +7,11 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
 import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {setEditContext, clearEditContext} from '../actions/editing';
 import {LayerRole} from '../actions/layers';
 import {setCurrentTask} from '../actions/task';
@@ -20,6 +22,7 @@ import EditingInterface from '../utils/EditingInterface';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
+
 import './style/FeatureForm.css';
 
 
@@ -46,6 +49,7 @@ class FeatureForm extends React.Component {
         enabled: PropTypes.bool,
         /** Whether to clear the task when the results window is closed. */
         exitTaskOnResultsClose: PropTypes.bool,
+        filter: PropTypes.object,
         /** Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). */
         geometry: PropTypes.shape({
             initialWidth: PropTypes.number,
@@ -155,7 +159,7 @@ class FeatureForm extends React.Component {
                         pendingRequests: state.pendingRequests - 1
                     }));
                 }
-            }, layer.filterParams?.[sublayer.name], layer.filterGeom);
+            }, this.props.filter.filterParams?.[sublayer.name], this.props.filter.filterGeom);
         });
         this.setState({pendingRequests: pendingRequests, pickedFeatures: {}, selectedFeature: ""});
     };
@@ -243,6 +247,7 @@ export default (iface = EditingInterface) => {
         currentEditContext: state.editing.currentContext,
         iface: iface,
         layers: state.layers.flat,
+        filter: state.layers.filter,
         map: state.map,
         theme: state.theme.current
     }), {

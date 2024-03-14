@@ -7,21 +7,25 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import mousetrap from 'mousetrap';
+
+import classnames from 'classnames';
 import {remove as removeDiacritics} from 'diacritics';
 import isEmpty from 'lodash.isempty';
-import classnames from 'classnames';
+import isEqual from 'lodash.isequal';
+import mousetrap from 'mousetrap';
+import PropTypes from 'prop-types';
+
 import {setCurrentTask} from '../actions/task';
+import {setMenuMargin} from '../actions/windows';
 import InputContainer from '../components/InputContainer';
-import LocaleUtils from '../utils/LocaleUtils';
 import ConfigUtils from '../utils/ConfigUtils';
+import LocaleUtils from '../utils/LocaleUtils';
 import MiscUtils from '../utils/MiscUtils';
 import ThemeUtils from '../utils/ThemeUtils';
 import Icon from './Icon';
+
 import './style/AppMenu.css';
-import isEqual from 'lodash.isequal';
 
 
 class AppMenu extends React.Component {
@@ -32,10 +36,12 @@ class AppMenu extends React.Component {
         currentTaskBlocked: PropTypes.bool,
         currentTheme: PropTypes.object,
         keepMenuOpen: PropTypes.bool,
+        menuCompact: PropTypes.bool,
         menuItems: PropTypes.array,
         onMenuToggled: PropTypes.func,
         openExternalUrl: PropTypes.func,
         setCurrentTask: PropTypes.func,
+        setMenuMargin: PropTypes.func,
         showFilterField: PropTypes.bool,
         showOnStartup: PropTypes.bool
     };
@@ -65,7 +71,7 @@ class AppMenu extends React.Component {
         }
     }
     componentDidUpdate(prevProps, prevState) {
-        if (this.state.menuVisible && !prevState.menuVisible && this.filterfield) {
+        if (this.state.menuVisible && !prevState.menuVisible && this.filterfield && !this.props.menuCompact) {
             // Need to wait until slide in transition is over
             setTimeout(() => { this.filterfield.focus(); }, 400);
         }
@@ -173,16 +179,21 @@ class AppMenu extends React.Component {
         if (!this.state.menuVisible && this.props.appMenuClearsTask) {
             this.props.setCurrentTask(null);
         }
-        if (!this.state.menuVisible) {
-            document.addEventListener('click', this.checkCloseMenu);
-            document.addEventListener('keydown', this.onKeyPress, true);
-            document.addEventListener('mousemove', this.onMouseMove, true);
-        } else {
-            document.removeEventListener('click', this.checkCloseMenu);
-            document.removeEventListener('keydown', this.onKeyPress, true);
-            document.removeEventListener('mousemove', this.onMouseMove, true);
+        if (!this.props.keepMenuOpen) {
+            if (!this.state.menuVisible) {
+                document.addEventListener('click', this.checkCloseMenu);
+                document.addEventListener('keydown', this.onKeyPress, true);
+                document.addEventListener('mousemove', this.onMouseMove, true);
+            } else {
+                document.removeEventListener('click', this.checkCloseMenu);
+                document.removeEventListener('keydown', this.onKeyPress, true);
+                document.removeEventListener('mousemove', this.onMouseMove, true);
+            }
         }
         this.props.onMenuToggled(!this.state.menuVisible);
+        if (this.props.menuCompact) {
+            this.props.setMenuMargin(!this.state.menuVisible ? MiscUtils.convertEmToPx(3.75) : 0, 0);
+        }
         this.setState((state) => ({menuVisible: !state.menuVisible, submenusVisible: [], filter: ""}));
     };
     checkCloseMenu = (ev) => {
@@ -267,12 +278,12 @@ class AppMenu extends React.Component {
         }
     };
     render() {
-        let className = "";
-        if (this.props.currentTaskBlocked) {
-            className = "appmenu-blocked";
-        } else if (this.state.menuVisible) {
-            className = "appmenu-visible";
-        }
+        const visible = !this.props.currentTaskBlocked && this.state.menuVisible;
+        const className = classnames({
+            "appmenu-blocked": this.props.currentTaskBlocked,
+            "appmenu-visible": visible,
+            "appmenu-compact": this.props.menuCompact
+        });
         const filter = removeDiacritics(this.state.filter.toLowerCase());
         return (
             <div className={"AppMenu " + className} ref={el => { this.menuEl = el; MiscUtils.setupKillTouchEvents(el); }}
@@ -328,5 +339,6 @@ export default connect((state) => ({
     currentTaskBlocked: state.task.blocked,
     currentTheme: state.theme.current || {}
 }), {
-    setCurrentTask: setCurrentTask
+    setCurrentTask: setCurrentTask,
+    setMenuMargin: setMenuMargin
 })(AppMenu);

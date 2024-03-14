@@ -6,14 +6,16 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import {v1 as uuidv1} from 'uuid';
-import ol from 'openlayers';
-import isEmpty from 'lodash.isempty';
 import geojsonBbox from 'geojson-bounding-box';
-import svgpath from 'svgpath';
-import CoordinatesUtils from '../utils/CoordinatesUtils';
-import ConfigUtils from '../utils/ConfigUtils';
+import isEmpty from 'lodash.isempty';
 import {getDefaultImageStyle} from 'ol/format/KML';
+import ol from 'openlayers';
+import simplepolygon from 'simplepolygon';
+import svgpath from 'svgpath';
+import {v1 as uuidv1} from 'uuid';
+
+import ConfigUtils from '../utils/ConfigUtils';
+import CoordinatesUtils from '../utils/CoordinatesUtils';
 import {END_MARKERS, computeFeatureStyle} from '../utils/FeatureStyles';
 
 
@@ -25,7 +27,7 @@ const VectorLayerUtils = {
             styles: [],
             labels: [],
             labelFillColors: [],
-            labelOultineColors: [],
+            labelOutlineColors: [],
             labelOutlineSizes: [],
             labelSizes: [],
             labelDist: []
@@ -41,7 +43,10 @@ const VectorLayerUtils = {
             if (layer.type !== 'vector' || (layer.features || []).length === 0 || layer.visibility === false || layer.skipPrint === true) {
                 continue;
             }
-            for (const feature of layer.features) {
+            const features = layer.features.map(feature =>
+                feature.geometry.type === "Polygon" ? simplepolygon(feature).features.map(f => ({...feature, geometry: f.geometry})) : feature
+            ).flat();
+            for (const feature of features) {
                 if (!VectorLayerUtils.validateGeometry(feature.geometry)) {
                     continue;
                 }
@@ -70,7 +75,7 @@ const VectorLayerUtils = {
                         params.labels.push(properties.segment_labels[i] || " ");
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(segment, printCrs === "EPSG:4326" ? 4 : 2));
                         params.labelFillColors.push(styleOptions.textFill);
-                        params.labelOultineColors.push(styleOptions.textStroke);
+                        params.labelOutlineColors.push(styleOptions.textStroke);
                         params.labelOutlineSizes.push(scaleFactor);
                         params.labelSizes.push(Math.round(10 * scaleFactor));
                         params.labelDist.push("-5");
@@ -94,14 +99,14 @@ const VectorLayerUtils = {
                         };
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
                         params.labelFillColors.push(ensureHex(styleOptions.fillColor));
-                        params.labelOultineColors.push(ensureHex(styleOptions.strokeColor));
+                        params.labelOutlineColors.push(ensureHex(styleOptions.strokeColor));
                         params.labelOutlineSizes.push(scaleFactor * styleOptions.strokeWidth * 0.5);
                         params.labelSizes.push(Math.round(10 * styleOptions.strokeWidth * scaleFactor));
                         params.labelDist.push("5");
                     } else {
                         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
                         params.labelFillColors.push(styleOptions.textFill);
-                        params.labelOultineColors.push(styleOptions.textStroke);
+                        params.labelOutlineColors.push(styleOptions.textStroke);
                         params.labelOutlineSizes.push(scaleFactor);
                         params.labelSizes.push(Math.round(10 * scaleFactor));
                         params.labelDist.push("-5");
@@ -278,7 +283,7 @@ const VectorLayerUtils = {
         params.geoms.push(VectorLayerUtils.geoJSONGeomToWkt(geometry, printCrs === "EPSG:4326" ? 4 : 2));
         params.labels.push(" ");
         params.labelFillColors.push("#FFF");
-        params.labelOultineColors.push("#FFF");
+        params.labelOutlineColors.push("#FFF");
         params.labelOutlineSizes.push(scaleFactor);
         params.labelSizes.push(Math.round(10 * scaleFactor));
         params.labelDist.push("0");

@@ -7,13 +7,16 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {Swipeable} from './Swipeable';
-import Icon from './Icon';
+
+import classnames from 'classnames';
+import PropTypes from 'prop-types';
+
 import {setCurrentTask} from '../actions/task';
 import LocaleUtils from '../utils/LocaleUtils';
-import classnames from 'classnames';
+import Icon from './Icon';
+import {Swipeable} from './Swipeable';
+
 import './style/SideBar.css';
 
 class SideBar extends React.Component {
@@ -26,6 +29,7 @@ class SideBar extends React.Component {
         heightResizeable: PropTypes.bool,
         icon: PropTypes.string,
         id: PropTypes.string.isRequired,
+        menuMargins: PropTypes.object,
         minWidth: PropTypes.string,
         onHide: PropTypes.func,
         onShow: PropTypes.func,
@@ -83,8 +87,13 @@ class SideBar extends React.Component {
             minWidth: this.props.minWidth,
             zIndex: visible ? 5 : 4
         };
-
         const isLeftSide = this.props.side === "left";
+        if (isLeftSide) {
+            style.left = visible ? this.props.menuMargins.left : 0;
+        } else {
+            style.right = visible ? this.props.menuMargins.right : 0;
+        }
+
         const classes = classnames({
             "sidebar": true,
             "sidebar-open": visible,
@@ -166,7 +175,8 @@ class SideBar extends React.Component {
 }
 
 const selector = (state) => ({
-    currentTask: state.task
+    currentTask: state.task,
+    menuMargins: state.windows.menuMargins
 });
 
 export default connect(selector, {

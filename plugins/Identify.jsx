@@ -7,16 +7,18 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
 import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {LayerRole, addLayerFeatures, addMarker, removeMarker, removeLayer} from '../actions/layers';
 import {setCurrentTask} from '../actions/task';
 import IdentifyViewer from '../components/IdentifyViewer';
 import MapSelection from '../components/MapSelection';
-import NumberInput from '../components/widgets/NumberInput';
 import ResizeableWindow from '../components/ResizeableWindow';
 import TaskBar from '../components/TaskBar';
+import NumberInput from '../components/widgets/NumberInput';
 import IdentifyUtils from '../utils/IdentifyUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MeasureUtils from '../utils/MeasureUtils';
@@ -77,6 +79,7 @@ class Identify extends React.Component {
         layers: PropTypes.array,
         longAttributesDisplay: PropTypes.string,
         map: PropTypes.object,
+        /** Extra params to append to the GetFeatureInfo request (i.e. `FI_POINT_TOLERANCE`, `FI_LINE_TOLERANCE`, `feature_count`, ...). Additionally, `region_feature_count` and `radius_feature_count` are supported. */
         params: PropTypes.object,
         removeLayer: PropTypes.func,
         removeMarker: PropTypes.func,
@@ -233,8 +236,13 @@ class Identify extends React.Component {
         const identifyResults = this.props.click.modifiers.ctrl !== true ? {} : this.state.identifyResults;
         const filter = VectorLayerUtils.geoJSONGeomToWkt(this.state.filterGeom);
         let pendingRequests = 0;
+        const params = {...this.props.params};
+        if (this.props.params.radius_feature_count) {
+            params.feature_count = this.props.params.radius_feature_count;
+            delete params.radius_feature_count;
+        }
         queryableLayers.forEach((layer) => {
-            const request = IdentifyUtils.buildFilterRequest(layer, layer.queryLayers.join(","), filter, this.props.map, this.props.params);
+            const request = IdentifyUtils.buildFilterRequest(layer, layer.queryLayers.join(","), filter, this.props.map, params);
             ++pendingRequests;
             IdentifyUtils.sendRequest(request, (response) => {
                 this.setState((state) => ({pendingRequests: state.pendingRequests - 1}));

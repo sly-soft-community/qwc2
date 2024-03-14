@@ -121,6 +121,7 @@ This plugin queries the dataset via the editing service specified by
 |----------|------|-------------|---------------|
 | allowAddForGeometryLayers | `bool` | Whether to allow adding records for datasets which have a geometry column. | `undefined` |
 | showEditFormButton | `bool` | Whether to show a button to open the edit form for selected layer. Requires the Editing plugin to be enabled. | `true` |
+| showLimitToExtent | `bool` | Whether to show the "Limit to extent" checkbox | `undefined` |
 | zoomLevel | `number` | The zoom level for zooming to point features. | `1000` |
 
 Authentication<a name="authentication"></a>
@@ -310,6 +311,7 @@ for customized queries and templates for the result presentation.
 | geometry | `{`<br />`  initialWidth: number,`<br />`  initialHeight: number,`<br />`  initialX: number,`<br />`  initialY: number,`<br />`  initiallyDocked: bool,`<br />`  side: string,`<br />`}` | Default window geometry with size, position and docking status. Positive position values (including '0') are related to top (InitialY) and left (InitialX), negative values (including '-0') to bottom (InitialY) and right (InitialX). | `{`<br />`    initialWidth: 240,`<br />`    initialHeight: 320,`<br />`    initialX: 0,`<br />`    initialY: 0,`<br />`    initiallyDocked: false,`<br />`    side: 'left'`<br />`}` |
 | highlightAllResults | `bool` | Whether to highlight all results if no result is hovered | `true` |
 | initialRadiusUnits | `string` | The initial radius units of the identify dialog in radius mode. One of 'meters', 'feet', 'kilometers', 'miles'. | `'meters'` |
+| params | `object` | Extra params to append to the GetFeatureInfo request (i.e. `FI_POINT_TOLERANCE`, `FI_LINE_TOLERANCE`, `feature_count`, ...). Additionally, `region_feature_count` and `radius_feature_count` are supported. | `undefined` |
 | replaceImageUrls | `bool` | Whether to replace an attribute value containing an URL to an image with an inline image. | `true` |
 
 LayerCatalog<a name="layercatalog"></a>
@@ -457,7 +459,7 @@ Allows exporting a selected portion of the map to a variety of formats.
 
 MapFilter<a name="mapfilter"></a>
 ----------------------------------------------------------------
-Allows exporting a selected portion of the map to a variety of formats.
+Allows filtering the map content via QGIS Server WMS FILTER.
 
 You can set predefined filter expressions for a theme item as follows:
 
@@ -467,26 +469,35 @@ predefinedFilters: {
     title: "<filter_title>",
     titlemsgid: "<filter_title_msgid>",
     filter: {
-        "<layer>": <data_service_expression>
+        "<layer>": <data_service_filter_expression>
     },
     fields: {
         id: "<value_id>",
         title: "<value_title">,
-        titlemsgid: "<value_title_msgid">",
+        titlemsgid: "<value_title_msgid>",
         defaultValue: <default_value>,
         inputConfig: {<input_field_opts>}
     }
 }
 ```
+
+The data service filter expressions are of the form `["<name>", "<op>", <value>]`, you can also specify complex expressions concatenated with `and|or` as follows:
+
+```json
+[["<name>", "<op>", <value>],"and|or",["<name>","<op>",<value>],...]
+```
+
 You can set the startup filter configuration by specifying a `f` URL-parameter with a JSON-serialized string as follows:
 
 ```
 f={"<filter_id>": {"<field_id>": <value>, ...}, ...}
 ```
 
-To control the temporal filter, the filter ID is `__timefilter`, and the field IDs are `tmin` and `tmax`, with values an ISO date or datetime string (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS`).
+To control the temporal filter, the filter ID is `__timefilter`, and the field IDs are `tstart` and `tend`, with values an ISO date or datetime string (`YYYY-MM-DD` or `YYYY-MM-DDTHH:MM:SS`).
 
 To control the spatial filter, the syntax is `"__geomfilter": <GeoJSON polygon coodinates array>`.
+
+To specify custom filters, the syntax is `"__custom": [{"title": "<title>", "layer": "<layername>", "expr": <JSON filter expr>}, ...]`.
 
 Whenever an startup filter value is specified, the filter is automatically enabled.
 
@@ -494,6 +505,7 @@ Whenever an startup filter value is specified, the filter is automatically enabl
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
+| allowCustomFilters | `bool` | Whether to allow custom filters. | `undefined` |
 | allowFilterByGeom | `bool` | Whether to allow filter by geometry. Requires the filter_geom plugin from qwc-qgis-server-plugins, and the filter will only be applied to postgis layers. | `undefined` |
 | allowFilterByTime | `bool` | Whether to display the temporal filter if temporal dimensions are found. | `true` |
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). Set to -1 to hide the button. | `5` |
@@ -736,6 +748,8 @@ Theme switcher panel.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | collapsibleGroups | `bool` | Whether to allow collapsing theme groups. | `undefined` |
+| hideAddThemeButton | `bool` | Whether to hide the add theme button. Note: the button will also be hidden if the global option `allowAddingOtherThemes` is `false`. | `undefined` |
+| hideAddThemeLayersButton | `bool` | Whether to hide the add theme layers button. Note: the button will also be hidden if the global option `allowAddingOtherThemes` is `false`. | `undefined` |
 | showDefaultThemeSelector | `bool` | Whether to show an icon to select the default theme/bookmark (of a logged in user). | `true` |
 | showLayerAfterChangeTheme | `bool` | Whether to show the LayerTree by default after switching the theme. | `false` |
 | showThemeFilter | `bool` | Wether to show the theme filter field in the top bar. * | `true` |
@@ -769,6 +783,7 @@ Top bar, containing the logo, searchbar, task buttons and app menu.
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
 | appMenuClearsTask | `bool` | Whether opening the app menu clears the active task. | `undefined` |
+| appMenuCompact | `bool` | Whether show an appMenu compact (menu visible on icons hover) - Only available for desktop client. | `undefined` |
 | appMenuFilterField | `bool` | Whether to display the filter field in the app menu. | `undefined` |
 | appMenuShortcut | `string` | The shortcut for tiggering the app menu, i.e. alt+shift+m. | `undefined` |
 | appMenuVisibleOnStartup | `bool` | Whether to open the app menu on application startup. | `undefined` |
@@ -788,6 +803,7 @@ Two specific plugins exist: ZoomInPlugin and ZoomOutPlugin, which are instances 
 
 | Property | Type | Description | Default value |
 |----------|------|-------------|---------------|
+| enableZoomByBoxSelection | `bool` | Enable zoom in or out by box selection. | `undefined` |
 | position | `number` | The position slot index of the map button, from the bottom (0: bottom slot). | `undefined` |
 | themeFlagBlacklist | `[string]` | Omit the button in themes matching one of these flags. | `undefined` |
 | themeFlagWhitelist | `[string]` | Only show the button in themes matching one of these flags. | `undefined` |

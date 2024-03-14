@@ -6,8 +6,9 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import url from 'url';
 import axios from 'axios';
+import url from 'url';
+
 import {LayerRole} from '../actions/layers';
 import ConfigUtils from '../utils/ConfigUtils';
 import LayerUtils from '../utils/LayerUtils';
@@ -132,6 +133,17 @@ export function resolvePermaLink(initialParams, callback) {
     } else {
         callback(initialParams, {}, true);
     }
+}
+
+export function resolveBookmark(bookmarkKey, callback) {
+    axios.get(ConfigUtils.getConfigProp("permalinkServiceUrl").replace(/\/$/, '') + "/bookmarks/" + bookmarkKey)
+        .then(response => {
+            const data = response.data;
+            callback({...(data.query || {})}, (data.state || {}), !!data.query);
+        })
+        .catch(() => {
+            callback(bookmarkKey, {}, false);
+        });
 }
 
 export function getUserBookmarks(user, callback) {

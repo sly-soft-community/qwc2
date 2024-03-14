@@ -6,13 +6,15 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import axios from 'axios';
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
+import axios from 'axios';
 import FileSaver from 'file-saver';
-import isEmpty from 'lodash.isempty';
 import formDataEntries from 'formdata-json';
+import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {LayerRole} from '../actions/layers';
 import {setCurrentTask} from '../actions/task';
 import Icon from '../components/Icon';
@@ -27,6 +29,7 @@ import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
 import MiscUtils from '../utils/MiscUtils';
 import VectorLayerUtils from '../utils/VectorLayerUtils';
+
 import './style/RasterExport.css';
 
 
@@ -247,7 +250,7 @@ class RasterExport extends React.Component {
                     <input name="HIGHLIGHT_SYMBOL" readOnly type="hidden" value={highlightParams.styles.join(";")} />
                     <input name="HIGHLIGHT_LABELSTRING" readOnly type="hidden" value={highlightParams.labels.join(";")} />
                     <input name="HIGHLIGHT_LABELCOLOR" readOnly type="hidden" value={highlightParams.labelFillColors.join(";")} />
-                    <input name="HIGHLIGHT_LABELBUFFERCOLOR" readOnly type="hidden" value={highlightParams.labelOultineColors.join(";")} />
+                    <input name="HIGHLIGHT_LABELBUFFERCOLOR" readOnly type="hidden" value={highlightParams.labelOutlineColors.join(";")} />
                     <input name="HIGHLIGHT_LABELBUFFERSIZE" readOnly type="hidden" value={highlightParams.labelOutlineSizes.join(";")} />
                     <input name="HIGHLIGHT_LABELSIZE" readOnly type="hidden" value={highlightParams.labelSizes.join(";")} />
                     <input name="HIGHLIGHT_LABEL_DISTANCE" readOnly type="hidden" value={highlightParams.labelDist.join(";")} />

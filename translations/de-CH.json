@@ -83,7 +83,8 @@
       "remove": "Lesezeichen entfernen",
       "removefailed": "Lesezeichen konnte nicht entfernt werden",
       "savefailed": "Lesezeichen konnte nicht aktualisiert werden",
-      "update": "Lesezeichen aktualisieren"
+      "update": "Lesezeichen aktualisieren",
+      "zoomToExtent": ""
     },
     "bottombar": {
       "mousepos_label": "Koordinaten",
@@ -259,7 +260,13 @@
       "wait": "Bitte warten..."
     },
     "mapfilter": {
+      "addcustomfilter": "Benutzerdef. filter hinzufügen",
+      "brokenrendering": "Die Kartendarstellung könnte aufgrund eines ungültigen Filterausdrucks fehlerhaft sein",
+      "cancel": "Abbrechen",
       "geomfilter": "Geometrie",
+      "invalidfilter": "Ungültiger Filterausdruck",
+      "save": "Speichern",
+      "selectlayer": "Ebene auswählen",
       "timefilter": "Zeit",
       "timefrom": "Von",
       "timeto": "Bis"

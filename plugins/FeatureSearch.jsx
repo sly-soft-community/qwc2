@@ -8,17 +8,19 @@
 
 
 import React from 'react';
-import axios from 'axios';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
-import {v1 as uuidv1} from 'uuid';
+
+import axios from 'axios';
 import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+import {v1 as uuidv1} from 'uuid';
+
 import IdentifyViewer from '../components/IdentifyViewer';
 import SideBar from '../components/SideBar';
 import Spinner from '../components/Spinner';
-import CoordinatesUtils from '../utils/CoordinatesUtils';
 import IdentifyUtils from '../utils/IdentifyUtils';
 import LocaleUtils from '../utils/LocaleUtils';
+
 import "./style/FeatureSearch.css";
 
 
@@ -184,13 +186,11 @@ class FeatureSearch extends React.Component {
         Object.keys(provider.params.fields).forEach(fieldname => {
             values[fieldname] = form.elements[fieldname].value;
         });
-        const bbox = CoordinatesUtils.reprojectBbox(this.props.theme.bbox.bounds, this.props.theme.bbox.crs, this.props.theme.mapCrs);
         const params = {
             SERVICE: 'WMS',
             VERSION: this.props.theme.version,
             REQUEST: 'GetFeatureInfo',
             CRS: this.props.theme.mapCrs,
-            BBOX: bbox.join(","),
             WIDTH: 100,
             HEIGHT: 100,
             LAYERS: [],

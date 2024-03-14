@@ -6,18 +6,19 @@
  * LICENSE file in the root directory of this source tree.
  */
 
-import ol from 'openlayers';
 import axios from 'axios';
 import deepmerge from 'deepmerge';
-import isEmpty from 'lodash.isempty';
 import {XMLParser} from 'fast-xml-parser';
+import isEmpty from 'lodash.isempty';
+import ol from 'openlayers';
 import randomColor from 'randomcolor';
 import url from 'url';
+
+import {LayerRole} from '../actions/layers';
 import ConfigUtils from './ConfigUtils';
 import CoordinatesUtils from './CoordinatesUtils';
 import LayerUtils from './LayerUtils';
 import MiscUtils from './MiscUtils';
-import {LayerRole} from '../actions/layers';
 
 function strcmp(a, b) {
     const al = a.toLowerCase();
@@ -28,10 +29,6 @@ function strcmp(a, b) {
         return 1;
     }
     return 0;
-}
-
-function array(obj) {
-    return Array.isArray(obj) ? obj : [obj];
 }
 
 const ServiceLayerUtils = {
@@ -201,7 +198,7 @@ const ServiceLayerUtils = {
         }
         let legendUrl = getMapUrl;
         try {
-            legendUrl = this.mergeCalledServiceUrlQuery(layer.Style[0].LegendURL[0].OnlineResource.href, calledUrlParts);
+            legendUrl = this.mergeCalledServiceUrlQuery(MiscUtils.ensureArray(MiscUtils.ensureArray(layer.Style)[0].LegendURL)[0].OnlineResource.href, calledUrlParts);
         } catch (e) {
             /* pass */
         }
@@ -252,7 +249,7 @@ const ServiceLayerUtils = {
         const version = capabilities.version;
         let formats = null;
         try {
-            serviceUrl = ServiceLayerUtils.getDCPTypes(array(capabilities.Capability.Request.GetFeature.DCPType)).HTTP.Get.onlineResource;
+            serviceUrl = ServiceLayerUtils.getDCPTypes(MiscUtils.ensureArray(capabilities.Capability.Request.GetFeature.DCPType)).HTTP.Get.onlineResource;
             serviceUrl = this.mergeCalledServiceUrlQuery(serviceUrl, calledUrlParts);
             formats = Object.keys(capabilities.Capability.Request.GetFeature.ResultFormat);
             if (typeof(formats) === 'string') {
@@ -264,7 +261,7 @@ const ServiceLayerUtils = {
         }
 
         const layers = [];
-        for (const featureType of array(capabilities.FeatureTypeList.FeatureType)) {
+        for (const featureType of MiscUtils.ensureArray(capabilities.FeatureTypeList.FeatureType)) {
             let name;
             let bbox;
             try {
@@ -301,17 +298,17 @@ const ServiceLayerUtils = {
         const version = capabilities.version;
         let formats = null;
         try {
-            const getFeatureOp = array(capabilities.OperationsMetadata.Operation).find(el => el.name === "GetFeature");
-            serviceUrl = ServiceLayerUtils.getDCPTypes(array(getFeatureOp.DCP)).HTTP.Get.href;
+            const getFeatureOp = MiscUtils.ensureArray(capabilities.OperationsMetadata.Operation).find(el => el.name === "GetFeature");
+            serviceUrl = ServiceLayerUtils.getDCPTypes(MiscUtils.ensureArray(getFeatureOp.DCP)).HTTP.Get.href;
             serviceUrl = this.mergeCalledServiceUrlQuery(serviceUrl, calledUrlParts);
-            const outputFormat = array(getFeatureOp.Parameter).find(el => el.name === "outputFormat");
+            const outputFormat = MiscUtils.ensureArray(getFeatureOp.Parameter).find(el => el.name === "outputFormat");
             formats = MiscUtils.ensureArray(outputFormat.AllowedValues ? outputFormat.AllowedValues.Value : outputFormat.Value);
         } catch (e) {
             return [];
         }
 
         const layers = [];
-        for (const featureType of array(capabilities.FeatureTypeList.FeatureType)) {
+        for (const featureType of MiscUtils.ensureArray(capabilities.FeatureTypeList.FeatureType)) {
             let name;
             let bbox;
             try {
@@ -392,7 +389,9 @@ const ServiceLayerUtils = {
                 } else {
                     ServiceLayerUtils.getCapabilities(serviceUrl, {SERVICE: 'WMS', REQUEST: 'GetCapabilities'}).then(resolve);
                 }
-            }).catch(reject);
+            }).catch(() => {
+                ServiceLayerUtils.getCapabilities(serviceUrl, {SERVICE: 'WMS', REQUEST: 'GetCapabilities'}).then(resolve).catch(reject);
+            });
         });
     },
     getWFSCapabilies(serviceUrl) {
@@ -452,7 +451,7 @@ const ServiceLayerUtils = {
     },
     mergeCalledServiceUrlQuery(capabilityUrl, calledServiceUrlParts) {
         if (ConfigUtils.getConfigProp("trustWmsCapabilityURLs")) {
-            return url.format(calledServiceUrlParts);
+            return url.format(capabilityUrl);
         }
         try {
             const urlParts = url.parse(capabilityUrl, true);
@@ -462,7 +461,7 @@ const ServiceLayerUtils = {
             delete urlParts.search;
             return url.format(urlParts);
         } catch (e) {
-            return url.format(calledServiceUrlParts);
+            return url.format(capabilityUrl);
         }
     }
 };

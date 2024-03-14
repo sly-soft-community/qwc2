@@ -7,26 +7,30 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
 import axios from 'axios';
-import isEmpty from 'lodash.isempty';
 import {remove as removeDiacritics} from 'diacritics';
-import Icon from './Icon';
+import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
+import {setActiveLayerInfo} from '../actions/layerinfo';
+import {LayerRole, addLayer} from '../actions/layers';
+import {setUserInfoFields} from '../actions/localConfig';
+import {setCurrentTask} from '../actions/task';
+import {setCurrentTheme, setThemeLayersList} from '../actions/theme';
 import ConfigUtils from '../utils/ConfigUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import ThemeUtils from '../utils/ThemeUtils';
-import {LayerRole, addLayer} from '../actions/layers';
-import {setCurrentTheme, setThemeLayersList} from '../actions/theme';
-import {setCurrentTask} from '../actions/task';
-import {setActiveLayerInfo} from '../actions/layerinfo';
-import {setUserInfoFields} from '../actions/localConfig';
+import Icon from './Icon';
+
 import './style/ThemeList.css';
 
 class ThemeList extends React.Component {
     static propTypes = {
         activeTheme: PropTypes.object,
         addLayer: PropTypes.func,
+        allowAddingOtherThemeLayers: PropTypes.bool,
         allowAddingOtherThemes: PropTypes.bool,
         changeTheme: PropTypes.func,
         collapsibleGroups: PropTypes.bool,
@@ -74,7 +78,7 @@ class ThemeList extends React.Component {
         }
         const subtree = subdirs.map((subdir) => {
             const expanded = !this.props.collapsibleGroups || filter || this.state.expandedGroups.includes(subdir.id) || (this.props.activeTheme && this.groupContainsActiveTheme(subdir));
-            if (isEmpty(subdir.items)) {
+            if (isEmpty(subdir.items) && isEmpty(subdir.subdirs)) {
                 return null;
             }
             return (
@@ -148,7 +152,7 @@ class ThemeList extends React.Component {
                             </div>
                             {!item.restricted ? (
                                 <div className="theme-item-icons">
-                                    {this.props.allowAddingOtherThemes ? (<Icon icon="layers" onClick={ev => this.getThemeLayersToList(ev, item)} title={addLayersTitle} />) : null}
+                                    {this.props.allowAddingOtherThemeLayers ? (<Icon icon="layers" onClick={ev => this.getThemeLayersToList(ev, item)} title={addLayersTitle} />) : null}
                                     {this.props.allowAddingOtherThemes ? (<Icon icon="plus" onClick={ev => this.addThemeLayers(ev, item)} title={addTitle} />) : null}
                                     <Icon icon="open_link" onClick={ev => this.openInTab(ev, item.id)} title={openTabTitle} />
                                     {this.props.showDefaultThemeSelector && username  ? (<Icon className={ (this.extractThemeId(this.props.defaultUrlParams) === item.id ? "icon-active" : "")} icon="new" onClick={ev => this.changeDefaultUrlParams(ev, item.id)} title={changeDefaultUrlTitle} />) : null }

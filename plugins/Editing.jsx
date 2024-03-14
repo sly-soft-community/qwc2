@@ -7,15 +7,17 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
 import {connect} from 'react-redux';
+
 import isEmpty from 'lodash.isempty';
 import isEqual from 'lodash.isequal';
+import PropTypes from 'prop-types';
 import {v1 as uuidv1} from 'uuid';
+
 import {setEditContext, clearEditContext, getFeatureTemplate} from '../actions/editing';
-import {setCurrentTask, setCurrentTaskBlocked} from '../actions/task';
 import {LayerRole, addLayerFeatures, removeLayer, refreshLayer, changeLayerProperty} from '../actions/layers';
 import {setSnappingConfig} from '../actions/map';
+import {setCurrentTask, setCurrentTaskBlocked} from '../actions/task';
 import AttributeForm from '../components/AttributeForm';
 import Icon from '../components/Icon';
 import PickFeature from '../components/PickFeature';
@@ -26,6 +28,7 @@ import EditingInterface from '../utils/EditingInterface';
 import LayerUtils from '../utils/LayerUtils';
 import LocaleUtils from '../utils/LocaleUtils';
 import MapUtils from '../utils/MapUtils';
+
 import './style/Editing.css';
 
 
@@ -47,6 +50,7 @@ class Editing extends React.Component {
         currentEditContext: PropTypes.string,
         editContext: PropTypes.object,
         enabled: PropTypes.bool,
+        filter: PropTypes.object,
         iface: PropTypes.object,
         layers: PropTypes.array,
         map: PropTypes.object,
@@ -121,13 +125,12 @@ class Editing extends React.Component {
                 const editConfig = this.props.theme.editConfig[this.state.selectedLayer];
                 const editPermissions = editConfig.permissions || {};
                 const editDataset = editConfig.editDataset;
-                const layer = this.props.layers.find(l => l.role === LayerRole.THEME);
                 this.props.iface.getFeature(editDataset, newPoint.coordinate, this.props.map.projection, scale, 96, (featureCollection) => {
                     const features = featureCollection ? featureCollection.features : null;
                     this.setState({pickedFeatures: features});
                     const feature = features ? features[0] : null;
                     this.props.setEditContext('Editing', {feature: feature, changed: false, geomReadOnly: editPermissions.updatable === false});
-                }, layer.filterParams?.[this.state.selectedLayer], layer.filterGeom);
+                }, this.props.filter.filterParams?.[this.state.selectedLayer], this.props.filter.filterGeom);
             }
         }
         if (prevProps.editContext.changed !== this.props.editContext.changed) {
@@ -256,7 +259,7 @@ class Editing extends React.Component {
             "Multi" + feature.geometry.type === geomType ||
             (feature.geometry.type.replace(/^Multi/, "") === geomType && feature.geometry.coordinates.length === 1)
         );
-    }
+    };
     geomPicked = (layer, feature) => {
         const geomType = this.props.theme.editConfig[this.state.selectedLayer]?.geomType;
         let geometry = feature.geometry;
@@ -339,6 +342,7 @@ export default (iface = EditingInterface) => {
         enabled: state.task.id === 'Editing',
         theme: state.theme.current,
         layers: state.layers.flat,
+        filter: state.layers.filter,
         map: state.map,
         iface: iface,
         editContext: state.editing.contexts.Editing || {},

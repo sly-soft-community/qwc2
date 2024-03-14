@@ -8,12 +8,13 @@
 
 import isEmpty from 'lodash.isempty';
 import isEqual from 'lodash.isequal';
-import {v4 as uuidv4} from 'uuid';
 import url from 'url';
+import {v4 as uuidv4} from 'uuid';
+
+import {LayerRole} from '../actions/layers';
 import ConfigUtils from './ConfigUtils';
 import CoordinatesUtils from './CoordinatesUtils';
 import MapUtils from './MapUtils';
-import {LayerRole} from '../actions/layers';
 import VectorLayerUtils from './VectorLayerUtils';
 
 const LayerUtils = {
@@ -152,7 +153,7 @@ const LayerUtils = {
             }
         }
     },
-    buildWMSLayerParams(layer) {
+    buildWMSLayerParams(layer, filter = {}) {
         const params = layer.params || {};
         let newParams = {};
         let queryLayers = [];
@@ -170,7 +171,7 @@ const LayerUtils = {
             newParams = {
                 LAYERS: layers.join(","),
                 OPACITIES: layers.map((x, i) => Math.round((opacities[i] ?? "255") * opacityMult)).map(Math.round).join(","),
-                STYLES: layer.style ?? params.STYLES ?? layers.map(x => "").join(","),
+                STYLES: layer.style ?? params.STYLES ?? layers.map(() => "").join(","),
                 ...layer.dimensionValues
             };
             queryLayers = layer.queryable && !layer.omitFromQueryLayers ? [layer.name] : [];
@@ -196,16 +197,16 @@ const LayerUtils = {
                 STYLES: styles.join(","),
                 ...layer.dimensionValues
             };
-            if (layer.filterParams) {
-                newParams.FILTER = Object.entries(layer.filterParams).reduce((res, [layername, filters]) => {
+            if (filter.filterParams) {
+                newParams.FILTER = Object.entries(filter.filterParams).reduce((res, [layername, filters]) => {
                     if (!layerNames.includes(layername)) {
                         return res;
                     }
                     return [...res, layername + ":" + filters.map(expr => Array.isArray(expr) ? LayerUtils.formatFilterExpr(expr) : "AND").join(" ")];
                 }, []).join(";");
             }
-            if (layer.filterGeom) {
-                newParams.FILTER_GEOM = VectorLayerUtils.geoJSONGeomToWkt(layer.filterGeom);
+            if (filter.filterGeom) {
+                newParams.FILTER_GEOM = VectorLayerUtils.geoJSONGeomToWkt(filter.filterGeom);
             }
         }
 
@@ -216,9 +217,15 @@ const LayerUtils = {
         };
     },
     formatFilterExpr(expr) {
-        if (expr.length === 3 && typeof expr[0] === "string" && typeof expr[2] === "string") {
+        if (expr.length === 3 && typeof expr[0] === "string") {
             const op = expr[1].toUpperCase();
-            return `"${expr[0]}" ${op} ${expr[2]}`;
+            if (typeof expr[2] === "number") {
+                return `"${expr[0]}" ${op} ${expr[2]}`;
+            } else if (expr[2] === null) {
+                return `"${expr[0]}" ${op} NULL`;
+            } else {
+                return `"${expr[0]}" ${op} '${expr[2]}'`;
+            }
         } else {
             return "( " + expr.map(entry => Array.isArray(entry) ? this.formatFilterExpr(entry) : entry.toUpperCase()).join(" ") + " )";
         }
@@ -335,18 +342,11 @@ const LayerUtils = {
         exploded = exploded.filter(entry => entry.layer.uuid !== layer.uuid || !LayerUtils.pathEqualOrBelow(sublayerpath, entry.path));
         // Re-assemble layers
         const newlayers = LayerUtils.implodeLayers(exploded);
-        for (const lyr of newlayers) {
-            if (lyr.type === "wms") {
-                Object.assign(lyr, LayerUtils.buildWMSLayerParams(lyr));
-            }
-        }
         // Ensure theme layer is never removed
         if (!newlayers.find(lyr => lyr.role === LayerRole.THEME)) {
             const oldThemeLayer = layers.find(lyr => lyr.role === LayerRole.THEME);
             if (oldThemeLayer) {
-                const newThemeLayer = {...oldThemeLayer, sublayers: []};
-                Object.assign(newThemeLayer, LayerUtils.buildWMSLayerParams(newThemeLayer));
-                newlayers.push(newThemeLayer);
+                newlayers.push({...oldThemeLayer, sublayers: []});
             }
         }
         // Re-add background layers
@@ -366,16 +366,9 @@ const LayerUtils = {
             // Add separator
             exploded.splice(pos, 0, LayerUtils.createSeparatorLayer(title)[0]);
         }
-        // Re-assemble layers
-        const newlayers = LayerUtils.implodeLayers(exploded);
-        for (const layer of newlayers) {
-            if (layer.type === "wms") {
-                Object.assign(layer, LayerUtils.buildWMSLayerParams(layer));
-            }
-        }
-        // Re-add background layers
+        // Re-assemble layers, re-add background layers
         return [
-            ...newlayers,
+            ...LayerUtils.implodeLayers(exploded),
             ...layers.filter(layer => layer.role === LayerRole.BACKGROUND)
         ];
     },
@@ -505,7 +498,6 @@ const LayerUtils = {
         }
         for (const layer of newlayers) {
             if (layer.type === "wms") {
-                Object.assign(layer, LayerUtils.buildWMSLayerParams(layer));
                 Object.assign(layer, LayerUtils.recomputeLayerBBox(layer));
             }
         }
@@ -534,9 +526,9 @@ const LayerUtils = {
             }
         }
     },
-    getSublayerNames(layer, toplevel = true) {
-        return [toplevel && layer.sublayers ? null : layer.name].concat((layer.sublayers || []).reduce((list, sublayer) => {
-            return list.concat([...this.getSublayerNames(sublayer, false)]);
+    getSublayerNames(layer, toplevel = true, filter = null) {
+        return [(toplevel && layer.sublayers) || (filter && !filter(layer)) ? null : layer.name].concat((layer.sublayers || []).reduce((list, sublayer) => {
+            return list.concat([...this.getSublayerNames(sublayer, false, filter)]);
         }, [])).filter(x => x);
     },
     mergeSubLayers(baselayer, addlayer) {
@@ -710,6 +702,7 @@ const LayerUtils = {
             if (externalLayer.tileGridName) {
                 externalLayer.tileGridConfig = (ConfigUtils.getConfigProp("mvtTileGrids") || {})[externalLayer.tileGridName];
                 if (!externalLayer.tileGridConfig) {
+                    /* eslint-disable-next-line */
                     console.warn("Tile grid config not found: " + externalLayer.tileGridName);
                 }
             }
@@ -768,7 +761,7 @@ const LayerUtils = {
                 LAYER: layername,
                 STYLES: style,
                 FILTER: layer.params.FILTER ?? ''
-            }
+            };
             delete urlParts.search;
             return url.format(urlParts);
         }

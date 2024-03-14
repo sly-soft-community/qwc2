@@ -83,7 +83,8 @@
       "remove": "Remove bookmark",
       "removefailed": "Failed to remove bookmark",
       "savefailed": "Failed to update bookmark",
-      "update": "Update bookmark"
+      "update": "Update bookmark",
+      "zoomToExtent": "Zoom to extent"
     },
     "bottombar": {
       "mousepos_label": "Coordinates",
@@ -259,7 +260,13 @@
       "wait": "Please wait..."
     },
     "mapfilter": {
+      "addcustomfilter": "Add custom filter",
+      "brokenrendering": "Map rendering may be broken due to an invalid filter expression",
+      "cancel": "Cancel",
       "geomfilter": "Geometry",
+      "invalidfilter": "Invalid filter expression",
+      "save": "Save",
+      "selectlayer": "Select layer",
       "timefilter": "Time",
       "timefrom": "From",
       "timeto": "To"

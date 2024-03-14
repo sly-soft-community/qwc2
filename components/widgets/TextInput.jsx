@@ -7,10 +7,13 @@
  */
 
 import React from 'react';
-import PropTypes from 'prop-types';
+
 import classNames from 'classnames';
+import PropTypes from 'prop-types';
+
 import LocaleUtils from '../../utils/LocaleUtils';
 import MiscUtils from '../../utils/MiscUtils';
+
 import './style/TextInput.css';
 
 class TextInput extends React.Component {
@@ -119,7 +122,7 @@ class TextInput extends React.Component {
         );
     }
     onChange = (ev) => {
-        const curValue = ev.target.innerHTML.replace(/<br\s*\/?>$/, '');
+        const curValue = ev.target.innerText.replace(/<br\s*\/?>$/, '');
         this.setState({curValue: curValue, changed: true});
         if (this.formEl?.form) {
             // Notify parent form picks of changed field

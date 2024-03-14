@@ -83,7 +83,8 @@
       "remove": "Esborrar",
       "removefailed": "Error al eliminar",
       "savefailed": "Error al modificar",
-      "update": "Updatejar"
+      "update": "Updatejar",
+      "zoomToExtent": ""
     },
     "bottombar": {
       "mousepos_label": "Coordenades",
@@ -259,7 +260,13 @@
       "wait": ""
     },
     "mapfilter": {
+      "addcustomfilter": "",
+      "brokenrendering": "",
+      "cancel": "",
       "geomfilter": "",
+      "invalidfilter": "",
+      "save": "",
+      "selectlayer": "",
       "timefilter": "",
       "timefrom": "",
       "timeto": ""

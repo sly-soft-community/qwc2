@@ -7,12 +7,11 @@
  */
 
 import React from 'react';
-import axios from 'axios';
-import PropTypes from 'prop-types';
-import {connect} from 'react-redux';
-import ReactDOM from 'react-dom';
-import isEmpty from 'lodash.isempty';
 import {Line} from "react-chartjs-2";
+import ReactDOM from 'react-dom';
+import {connect} from 'react-redux';
+
+import axios from 'axios';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -25,6 +24,9 @@ import {
     BubbleController
 } from 'chart.js';
 import FileSaver from 'file-saver';
+import isEmpty from 'lodash.isempty';
+import PropTypes from 'prop-types';
+
 import {addMarker, removeMarker} from '../actions/layers';
 import {changeMeasurementState} from '../actions/measurement';
 import ResizeableWindow from '../components/ResizeableWindow';
@@ -120,16 +122,30 @@ class HeightProfilePrintDialog_ extends React.PureComponent {
         }
     };
     refreshImage = () => {
-        const geom = {
-            coordinates: this.props.measurement.coordinates,
-            type: 'LineString'
+        const measurement = this.props.measurement;
+        const layer = {
+            type: 'vector',
+            opacity: 255,
+            features: [
+                {
+                    type: 'Feature',
+                    geometry: {
+                        coordinates: measurement.coordinates,
+                        type: 'LineString'
+                    },
+                    styleOptions: {
+                        strokeColor: [255, 0, 0, 1],
+                        strokeWidth: 4
+                    },
+                    properties: {
+                        segment_labels: measurement.segment_lengths.map(length => MeasureUtils.formatMeasurement(length, false, measurement.lenUnit))
+                    }
+                }
+            ]
         };
-        const styleOptions = {
-            strokeColor: [255, 0, 0, 1],
-            strokeWidth: 4
-        };
-
-        const exportParams = LayerUtils.collectPrintParams(this.props.layers, this.props.theme, this.state.scale, this.props.map.projection, true, false);
+        const mapCrs = this.props.map.projection;
+        const exportParams = LayerUtils.collectPrintParams(this.props.layers, this.props.theme, this.state.scale, mapCrs, true, false);
+        const highlightParams = VectorLayerUtils.createPrintHighlighParams([layer], mapCrs);
         const imageParams = {
             SERVICE: 'WMS',
             VERSION: '1.3.0',
@@ -140,8 +156,14 @@ class HeightProfilePrintDialog_ extends React.PureComponent {
             BBOX: this.props.map.bbox.bounds,
             WIDTH: this.props.map.size.width,
             HEIGHT: this.props.map.size.height,
-            HIGHLIGHT_GEOM: VectorLayerUtils.geoJSONGeomToWkt(geom, this.props.map.projection === "EPSG:4326" ? 4 : 2),
-            HIGHLIGHT_SYMBOL: VectorLayerUtils.createSld('LineString', 'default', styleOptions, 255),
+            HIGHLIGHT_GEOM: highlightParams.geoms.join(";"),
+            HIGHLIGHT_SYMBOL: highlightParams.styles.join(";"),
+            HIGHLIGHT_LABELSTRING: highlightParams.labels.join(";"),
+            HIGHLIGHT_LABELCOLOR: highlightParams.labelFillColors.join(";"),
+            HIGHLIGHT_LABELBUFFERCOLOR: highlightParams.labelOutlineColors.join(";"),
+            HIGHLIGHT_LABELBUFFERSIZE: highlightParams.labelOutlineSizes.join(";"),
+            HIGHLIGHT_LABELSIZE: highlightParams.labelSizes.join(";"),
+            HIGHLIGHT_LABEL_DISTANCE: highlightParams.labelDist.join(";"),
             csrf_token: MiscUtils.getCsrfToken(),
             ...exportParams
         };
