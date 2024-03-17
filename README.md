@@ -11,3 +11,4 @@ See:
 * [this presentation](https://blog.sourcepole.ch/assets/2019/qwc2-foss4g19.pdf) for an overview and architecture of QWC2.
 
 Please report QWC2 issues at [qwc2-demo-app/issues](https://github.com/qgis/qwc2-demo-app/issues).
+
